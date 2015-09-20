@@ -1,0 +1,61 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="mavlana.halaleats.ProfilePage">
+
+     <TextView
+        android:id="@+id/test"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imgProfilePic"
+        android:layout_centerHorizontal="true" />
+    <ImageView
+        android:id="@+id/imgProfilePic"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="21dp" />
+
+    <TextView
+        android:id="@+id/favouritesText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/test"
+        android:text="Favourites"/>
+
+    <ListView
+        android:id="@+id/favourites"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/favouritesText"
+        android:layout_above="@+id/btnGroup">
+
+    </ListView>
+
+
+    <RadioGroup
+        android:layout_width = "fill_parent"
+        android:id="@+id/btnGroup"
+        android:layout_height = "wrap_content"
+        android:layout_alignParentBottom = "true"
+        android:orientation = "horizontal"
+        >
+        <RadioButton
+            android:id = "@+id/btnProfile"
+            style = "@style/navbar_button"
+            android:drawableTop = "@drawable/profile_selector"
+            android:text = "Profile"
+            android:onClick="onRadioButtonClicked"
+            android:checked="true"
+            />
+        <RadioButton
+            android:id = "@+id/btnSearch"
+            style = "@style/navbar_button"
+            android:drawableTop = "@drawable/search_selector"
+            android:text = "Search"
+            android:layout_marginLeft = "5dp"
+            android:onClick="onRadioButtonClicked"
+            />
+    </RadioGroup >
+
+</RelativeLayout>
