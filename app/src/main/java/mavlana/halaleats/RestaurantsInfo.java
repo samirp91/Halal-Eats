@@ -43,6 +43,8 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
     private String hours;
     private String myLat;
     private String myLng;
+    private String price;
+    private String location;
     private TextView nameText;
     private TextView addressText;
     private TextView cuisineText;
@@ -84,7 +86,9 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         myLng = getIntent().getStringExtra("MyLongitude");
         userID = getIntent().getStringExtra("ID");
         rID = getIntent().getStringExtra("rID");
+        location = getIntent().getStringExtra("Location");
         favourite = getIntent().getBooleanExtra("Favourite", false);
+        price = getIntent().getStringExtra("Price");
         MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -136,11 +140,21 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
                 }
                 final ParseObject favourites = new ParseObject(userID);
                 ParseQuery query = new ParseQuery(userID);
-                query.whereEqualTo("Restaurants", rID);
+                query.whereEqualTo("rID", rID);
                 query.getFirstInBackground(new GetCallback<ParseObject>() {
                     public void done(ParseObject object, ParseException e) {
                         if (object == null) {
-                            favourites.put("Restaurants", rID);
+                            favourites.put("rID", rID);
+                            favourites.put("Address", address);
+                            favourites.put("Cuisine", cuisine);
+                            favourites.put("Latitude", lat);
+                            favourites.put("Longitude", lng);
+                            favourites.put("Location", location);
+                            favourites.put("PhoneNumber", number);
+                            favourites.put("Price", price);
+                            favourites.put("RestaurantName", name);
+                            favourites.put("Time", hours);
+                            favourites.put("Website", web);
                             favourites.saveInBackground();
                         } else {
                             try {
