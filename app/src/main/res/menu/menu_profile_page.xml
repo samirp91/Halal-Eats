@@ -1,6 +1,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context="mavlana.halaleats.ProfilePage">
-    <item android:id="@+id/action_settings" android:title="Find My Location"
+    <item android:id="@+id/start_location" android:title="Find My Location"
+        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/stop_location" android:title="Stop Location Search"
         android:orderInCategory="100" app:showAsAction="never" />
 </menu>

@@ -130,6 +130,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private TreeSet<String> prices = new TreeSet<>();
     private float[] resultArray = new float[99];
     private String[] cuisineArray;
+    private boolean mRequestingLocationUpdates = false;
 
     LocationManager manager;
     boolean statusOfGPS;
@@ -272,7 +273,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.start_location) {
             statusOfGPS = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             if (!statusOfGPS) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
@@ -304,7 +305,10 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
                 alertDialog.show();
             }
-//            startLocationUpdates();
+            startLocationUpdates();
+        }
+        else if (id == R.id.stop_location){
+            stopLocationUpdates();
         }
 
         return super.onOptionsItemSelected(item);
@@ -426,7 +430,24 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         if (searchBar != null && searchBar.hasFocus()) {
             searchBar.clearFocus();
         }
+        else{
+            super.onBackPressed();
+        }
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopLocationUpdates();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
     }
 
     public void onRadioButtonClicked(View view) {
@@ -1078,6 +1099,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
+        mRequestingLocationUpdates = true;
     }
 
     /**
@@ -1097,6 +1119,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         // The final argument to {@code requestLocationUpdates()} is a LocationListener
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        mRequestingLocationUpdates = false;
     }
 
     @Override
@@ -1119,7 +1142,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             }
 
             arrayAdapter.notifyDataSetChanged();
-            stopLocationUpdates();
+//            stopLocationUpdates();
 
         }
 
@@ -1134,7 +1157,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             }
             Collections.sort(favourites);
             favouritesAdapter.notifyDataSetChanged();
-            stopLocationUpdates();
+//            stopLocationUpdates();
         }
 
 

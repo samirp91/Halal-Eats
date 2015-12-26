@@ -109,6 +109,7 @@ public class LoginActivity extends FragmentActivity implements
                                 connected.putExtra("ID", AccessToken.getCurrentAccessToken().getUserId());
                                 connected.putExtra("Name", name);
                                 startActivity(connected);
+                                finish();
                                 // send email and id to your web server
                             }
                         }
@@ -133,6 +134,7 @@ public class LoginActivity extends FragmentActivity implements
                                     connected.putExtra("ID", loginResult.getAccessToken().getUserId());
                                     connected.putExtra("Name", name);
                                     startActivity(connected);
+                                    finish();
                                     // send email and id to your web server
                                 }
                             }
@@ -261,6 +263,7 @@ public class LoginActivity extends FragmentActivity implements
 
         Intent connected = new Intent(this, ProfilePage.class).putExtra("Login Type", "Google");
         startActivity(connected);
+        finish();
         // Show the signed-in UI
 //        updateUI(true);
     }

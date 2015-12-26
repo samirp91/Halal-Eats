@@ -18,7 +18,7 @@
         android:paddingBottom="1dip"
         android:paddingTop="1dip"
         android:text="sample"
-        android:textColor="#FF9800"
+        android:textColor="@color/black"
         android:textSize="17dip"
         android:textStyle="bold" />
 
