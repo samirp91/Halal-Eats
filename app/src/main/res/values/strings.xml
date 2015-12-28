@@ -18,7 +18,8 @@
     <string name="com_facebook_loginview_log_in_button_long">Log in with facebook </string>
     <string name="title_activity_profile_page">ProfilePage</string>
 
-    <string name="hello_world">Hello world!</string>
+    <string name="drawer_open">Drawer Open</string>
+    <string name="drawer_close">Drawer Close</string>
     <string name="action_settings">Settings</string>
 
     <color name="White">#FFFFFF</color>
