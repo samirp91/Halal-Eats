@@ -4,6 +4,8 @@
     <string name="signed_in_fmt">Signed in as: %s</string>
     <string name="signing_in">Signing in…</string>
     <string name="signed_out">Signed out</string>
+    <string name="server_client_id">745274579869-mloloteqoj9e4mfugigj5ct02qfpdqh7.apps.googleusercontent.com</string>
+
 
     <!-- Google Play Services error for Toast -->
     <string name="play_services_error_fmt">Google Play Services Error: %i</string>
@@ -18,7 +20,8 @@
     <string name="com_facebook_loginview_log_in_button_long">Log in with facebook </string>
     <string name="title_activity_profile_page">ProfilePage</string>
 
-    <string name="hello_world">Hello world!</string>
+    <string name="drawer_open">Drawer Open</string>
+    <string name="drawer_close">Drawer Close</string>
     <string name="action_settings">Settings</string>
 
     <color name="White">#FFFFFF</color>

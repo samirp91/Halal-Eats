@@ -1,9 +1,11 @@
 package mavlana.halaleats;
 
+import android.Manifest;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Address;
@@ -12,6 +14,8 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -80,6 +84,7 @@ import java.util.TreeSet;
 public class ProfilePage extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private ArrayList<RestaurantInfo> listOfRestaurants;
+    private static final int LOCATION_PERMISSIONS = 21;
     private List<RestaurantInfo> foundNew;
     private String mSearchQuery = "";
     private static final String TAG = "Profile Picture";
@@ -306,8 +311,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 alertDialog.show();
             }
             startLocationUpdates();
-        }
-        else if (id == R.id.stop_location){
+        } else if (id == R.id.stop_location) {
             stopLocationUpdates();
         }
 
@@ -316,14 +320,12 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
     @Override
     public void onConnected(Bundle bundle) {
-        if (lat == 0 && lng == 0) {
-            startLocationUpdates();
-        }
+
         if (loginType.equals("Google")) {
             getProfileInformation();
         }
-        if (mCurrentLocation == null && listLoaded) {
-            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if ((lat == 0 && lng == 0) || (mCurrentLocation == null && listLoaded)) {
+            startLocationUpdates();
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
             if (mCurrentLocation != null) {
                 lat = mCurrentLocation.getLatitude();
@@ -360,38 +362,17 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     }
 
     private void getProfileInformation() {
-        try {
+        name = getIntent().getStringExtra("Name");
+        userID = "G" + getIntent().getStringExtra("ID");
+        personPhotoUrl = getIntent().getStringExtra("Image");
 
-            if (Plus.PeopleApi.getCurrentPerson(mGoogleApiClient) != null) {
-                Person currentPerson = Plus.PeopleApi
-                        .getCurrentPerson(mGoogleApiClient);
-                name = currentPerson.getDisplayName();
-                userID = "G" + currentPerson.getId();
-                personPhotoUrl = currentPerson.getImage().getUrl();
-                String personGooglePlusProfile = currentPerson.getUrl();
-                String email = Plus.AccountApi.getAccountName(mGoogleApiClient);
+        // by default the profile url gives 50x50 px image only
+        // we can replace the value with whatever dimension we want by
+        // replacing sz=X
+        personPhotoUrl = personPhotoUrl.substring(0, personPhotoUrl.length() - 2)
+                + PROFILE_PIC_SIZE;
 
-                Log.e(TAG, "Name: " + name + ", plusProfile: "
-                        + personGooglePlusProfile + ", email: " + email
-                        + ", Image: " + personPhotoUrl);
-
-                // by default the profile url gives 50x50 px image only
-                // we can replace the value with whatever dimension we want by
-                // replacing sz=X
-                personPhotoUrl = personPhotoUrl.substring(0,
-                        personPhotoUrl.length() - 2)
-                        + PROFILE_PIC_SIZE;
-
-
-                getProfileView();
-
-            } else {
-                Toast.makeText(getApplicationContext(),
-                        "Person information is null", Toast.LENGTH_LONG).show();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        getProfileView();
     }
 
     /**
@@ -429,8 +410,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     public void onBackPressed() {
         if (searchBar != null && searchBar.hasFocus()) {
             searchBar.clearFocus();
-        }
-        else{
+        } else {
             super.onBackPressed();
         }
 
@@ -542,7 +522,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                         r.updateDistance(lat, lng);
                         favourites.add(r);
 
-                        if (objects.size() == count){
+                        if (objects.size() == count) {
                             favouritesLoaded = true;
                             Collections.sort(favourites);
                             if (profileView) {
@@ -569,7 +549,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 //            startLocationUpdates();
 //        }
 
-        if (listLoaded){
+        if (listLoaded) {
             lv = (ListView) findViewById(R.id.list_view);
             searchBar = (AutoCompleteTextView) findViewById(R.id.search);
             searchBar.addTextChangedListener(new SearchWatcher());
@@ -754,8 +734,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     intent.putExtra("Location", r.getCity());
                     intent.putExtra("Price", r.getPrice());
                     r.setFavourite(false);
-                    for (RestaurantInfo a : favourites){
-                        if (a.getrID().equals(r.getrID())){
+                    for (RestaurantInfo a : favourites) {
+                        if (a.getrID().equals(r.getrID())) {
                             r.setFavourite(true);
                             break;
                         }
@@ -765,8 +745,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     startActivity(intent);
                 }
             });
-        }
-        else {
+        } else {
             listLoaded = false;
 
             searchBar = (AutoCompleteTextView) findViewById(R.id.search);
@@ -947,9 +926,9 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         }
     }
 
-    private class RestaurantInfoArray{
+    private class RestaurantInfoArray {
 
-        public RestaurantInfoArray(){
+        public RestaurantInfoArray() {
             ParseQuery<ParseObject> query = ParseQuery.getQuery("Restaurants");
             query.setLimit(1000);
             query.findInBackground(new FindCallback<ParseObject>() {
@@ -1097,6 +1076,20 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     protected void startLocationUpdates() {
         // The final argument to {@code requestLocationUpdates()} is a LocationListener
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSIONS);
+            return;
+        }
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
         mRequestingLocationUpdates = true;
@@ -1118,6 +1111,16 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
         // The final argument to {@code requestLocationUpdates()} is a LocationListener
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         mRequestingLocationUpdates = false;
     }
@@ -1363,49 +1366,49 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         if (activityStarted){
             count = 1;
             activityStarted = false;
-                favourites = new ArrayList<>();
-                ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
-                rIDs = new ArrayList<>();
-                query.whereExists("rID");
-                query.findInBackground(new FindCallback<ParseObject>() {
-                    public void done(List<ParseObject> objects, ParseException e) {
-                        if (e == null) {
-                            count = 1;
-                            for (ParseObject post : objects) {
-                                String[] info = new String[11];
-                                info[0] = post.getString("rID");
-                                info[1] = post.getString("RestaurantName");
-                                info[2] = post.getString("Address");
-                                info[3] = post.getString("PhoneNumber");
-                                info[4] = post.getString("Latitude");
-                                info[5] = post.getString("Longitude");
-                                info[6] = post.getString("Website");
-                                info[7] = post.getString("Location");
-                                info[8] = post.getString("Cuisine");
-                                info[9] = post.getString("Price");
-                                info[10] = post.getString("Time");
+            favourites = new ArrayList<>();
+            ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
+            rIDs = new ArrayList<>();
+            query.whereExists("rID");
+            query.findInBackground(new FindCallback<ParseObject>() {
+                public void done(List<ParseObject> objects, ParseException e) {
+                    if (e == null) {
+                        count = 1;
+                        for (ParseObject post : objects) {
+                            String[] info = new String[11];
+                            info[0] = post.getString("rID");
+                            info[1] = post.getString("RestaurantName");
+                            info[2] = post.getString("Address");
+                            info[3] = post.getString("PhoneNumber");
+                            info[4] = post.getString("Latitude");
+                            info[5] = post.getString("Longitude");
+                            info[6] = post.getString("Website");
+                            info[7] = post.getString("Location");
+                            info[8] = post.getString("Cuisine");
+                            info[9] = post.getString("Price");
+                            info[10] = post.getString("Time");
 
-                                RestaurantInfo r = new RestaurantInfo(info);
-                                r.setFavourite(true);
-                                r.updateDistance(lat, lng);
-                                favourites.add(r);
+                            RestaurantInfo r = new RestaurantInfo(info);
+                            r.setFavourite(true);
+                            r.updateDistance(lat, lng);
+                            favourites.add(r);
 
-                                if (objects.size() == count) {
-                                    favouritesLoaded = true;
-                                    Collections.sort(favourites);
-                                    if (profileView) {
-                                        favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
-                                                favourites);
-                                        favouritesList.setAdapter(favouritesAdapter);
-                                        favouritesAdapter.notifyDataSetChanged();
-                                    }
-                                } else {
-                                    count++;
+                            if (objects.size() == count) {
+                                favouritesLoaded = true;
+                                Collections.sort(favourites);
+                                if (profileView) {
+                                    favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
+                                            favourites);
+                                    favouritesList.setAdapter(favouritesAdapter);
+                                    favouritesAdapter.notifyDataSetChanged();
                                 }
+                            } else {
+                                count++;
                             }
                         }
                     }
-                });
+                }
+            });
         }
         super.onRestart();
     }
@@ -1506,7 +1509,59 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             return filter;
         }
     }
+
+    private void askForPermission() {
+        int permissionCheckCoarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION);
+        int permissionCheckFine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            // No explanation needed, we can request the permission.
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSIONS);
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_PERMISSIONS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case LOCATION_PERMISSIONS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    if (!mRequestingLocationUpdates) {
+                        LocationServices.FusedLocationApi.requestLocationUpdates(
+                                mGoogleApiClient, mLocationRequest, this);
+                        mRequestingLocationUpdates = true;
+                    }
+                    else{
+                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        mRequestingLocationUpdates = false;
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
 }
-
-
-

@@ -23,9 +23,15 @@ import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.OptionalPendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
 import android.content.DialogInterface;
@@ -63,7 +69,6 @@ public class LoginActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "MainActivity";
-    private TextView info;
     private LoginButton loginButton;
     private CallbackManager callbackManager;
     private boolean loggedIn = false;
@@ -79,9 +84,6 @@ public class LoginActivity extends FragmentActivity implements
 
     /* Client for accessing Google APIs */
     private GoogleApiClient mGoogleApiClient;
-
-    /* View to display current status (signed-in, signed-out, disconnected, etc) */
-    private TextView mStatus;
 
     /* Is there a ConnectionResult resolution in progress? */
     private boolean mIsResolving = false;
@@ -172,17 +174,22 @@ public class LoginActivity extends FragmentActivity implements
         ((SignInButton) findViewById(R.id.plus_sign_in_button)).setSize(SignInButton.SIZE_WIDE);
 
         // Start with sign-in button disabled until sign-in either succeeds or fails
-        findViewById(R.id.plus_sign_in_button).setEnabled(false);
+//        findViewById(R.id.plus_sign_in_button).setEnabled(false);
 
         // [START create_google_api_client]
         // Build GoogleApiClient with access to basic profile
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestServerAuthCode(getString(R.string.server_client_id))
+                .build();
         mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Plus.API)
-                .addScope(new Scope(Scopes.PROFILE))
+                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
         // [END create_google_api_client]
+        SignInButton signInButton = (SignInButton) findViewById(R.id.plus_sign_in_button);
+        signInButton.setSize(SignInButton.SIZE_STANDARD);
+        signInButton.setScopes(gso.getScopeArray());
     }
 
     private void updateUI(boolean isSignedIn) {
@@ -207,7 +214,25 @@ public class LoginActivity extends FragmentActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        mGoogleApiClient.connect();
+//        mGoogleApiClient.connect();
+        OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
+        if (opr.isDone()) {
+            // If the user's cached credentials are valid, the OptionalPendingResult will be "done"
+            // and the GoogleSignInResult will be available instantly.
+            Log.d(TAG, "Got cached sign-in");
+            GoogleSignInResult result = opr.get();
+            handleSignInResult(result);
+        } else {
+            // If the user has not previously signed in on this device or the sign-in has expired,
+            // this asynchronous branch will attempt to sign in the user silently.  Cross-device
+            // single sign-on will occur in this branch.
+            opr.setResultCallback(new ResultCallback<GoogleSignInResult>() {
+                @Override
+                public void onResult(GoogleSignInResult googleSignInResult) {
+                    handleSignInResult(googleSignInResult);
+                }
+            });
+        }
     }
 
     @Override
@@ -238,8 +263,10 @@ public class LoginActivity extends FragmentActivity implements
                 mShouldResolve = false;
             }
 
-            mIsResolving = false;
-            mGoogleApiClient.connect();
+//            mIsResolving = false;
+//            mGoogleApiClient.connect();
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
         }
         else{
             callbackManager.onActivityResult(requestCode, resultCode, data);
@@ -247,6 +274,26 @@ public class LoginActivity extends FragmentActivity implements
 
     }
     // [END on_activity_result]
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d(TAG, "handleSignInResult:" + result.isSuccess());
+        if (result.isSuccess()) {
+            // Signed in successfully, show authenticated UI.
+            GoogleSignInAccount acct = result.getSignInAccount();
+            Intent connected = new Intent(this, ProfilePage.class).putExtra("Login Type", "Google");
+            connected.putExtra("Name", acct.getDisplayName());
+            connected.putExtra("ID", acct.getId());
+            connected.putExtra("Image", acct.getPhotoUrl().toString());
+            startActivity(connected);
+            finish();
+//            updateUI(true);
+        } else {
+            // Signed out, show unauthenticated UI.
+//            updateUI(false);
+
+
+        }
+    }
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -323,7 +370,6 @@ public class LoginActivity extends FragmentActivity implements
         } else {
             // No default Google Play Services error, display a message to the user.
             String errorString = getString(R.string.play_services_error_fmt, errorCode);
-            Toast.makeText(this, errorString, Toast.LENGTH_SHORT).show();
 
             mShouldResolve = false;
             updateUI(false);
@@ -338,11 +384,12 @@ public class LoginActivity extends FragmentActivity implements
                 // attempt to resolve any errors that occur.
 //                mStatus.setText(R.string.signing_in);
                 // [START sign_in_clicked]
-                mShouldResolve = true;
-                mGoogleApiClient.connect();
+//                mShouldResolve = true;
+//                mGoogleApiClient.connect();
                 // [END sign_in_clicked]
                 // [END disconnect_clicked]
-                updateUI(false);
+//                updateUI(false);
+                signIn();
                 break;
             case R.id.sign_out_button:
                 // Clear the default account so that GoogleApiClient will not automatically
@@ -356,6 +403,11 @@ public class LoginActivity extends FragmentActivity implements
                 updateUI(false);
                 break;
         }
+    }
+
+    private void signIn() {
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+        startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
     public boolean isLoggedIn() {
