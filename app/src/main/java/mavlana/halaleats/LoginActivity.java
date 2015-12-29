@@ -180,6 +180,7 @@ public class LoginActivity extends FragmentActivity implements
         // Build GoogleApiClient with access to basic profile
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestServerAuthCode(getString(R.string.server_client_id))
                 .build();
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
@@ -275,7 +276,6 @@ public class LoginActivity extends FragmentActivity implements
     // [END on_activity_result]
 
     private void handleSignInResult(GoogleSignInResult result) {
-        System.out.println(result.getStatus());
         Log.d(TAG, "handleSignInResult:" + result.isSuccess());
         if (result.isSuccess()) {
             // Signed in successfully, show authenticated UI.
@@ -283,7 +283,7 @@ public class LoginActivity extends FragmentActivity implements
             Intent connected = new Intent(this, ProfilePage.class).putExtra("Login Type", "Google");
             connected.putExtra("Name", acct.getDisplayName());
             connected.putExtra("ID", acct.getId());
-            connected.putExtra("Image", acct.getPhotoUrl());
+            connected.putExtra("Image", acct.getPhotoUrl().toString());
             startActivity(connected);
             finish();
 //            updateUI(true);
@@ -291,7 +291,6 @@ public class LoginActivity extends FragmentActivity implements
             // Signed out, show unauthenticated UI.
 //            updateUI(false);
 
-            Toast.makeText(this, "TTTTTT", Toast.LENGTH_SHORT).show();
 
         }
     }
@@ -371,7 +370,6 @@ public class LoginActivity extends FragmentActivity implements
         } else {
             // No default Google Play Services error, display a message to the user.
             String errorString = getString(R.string.play_services_error_fmt, errorCode);
-            Toast.makeText(this, errorString, Toast.LENGTH_SHORT).show();
 
             mShouldResolve = false;
             updateUI(false);

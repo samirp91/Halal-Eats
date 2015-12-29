@@ -16,6 +16,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "745274579869-og28ktgruvcmb3sp5gih584fvff0psl6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mavlana.halaleats",
+            "certificate_hash": "98F3D1A013380EF19E4B90AA77394D6AB664B1D7"
+          }
+        },
+        {
           "client_id": "745274579869-ugepk8a8h5aik5onmcdhna9ebnhdgl5r.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
