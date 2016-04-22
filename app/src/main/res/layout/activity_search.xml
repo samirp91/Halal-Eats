@@ -26,8 +26,8 @@
         android:layout_height="wrap_content"
         android:hint="Search"
         android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_toEndOf="@+id/toggle"
+        android:layout_toRightOf="@+id/toggle" />
 
     <RadioGroup
         android:id="@+id/tabBar"
@@ -88,6 +88,17 @@
         android:layout_above="@+id/tabBar"
         android:layout_marginTop="0dp"
         android:paddingTop="0dp" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/toggle"
+        android:src="@drawable/ic_drawer"
+        android:background="@null"
+        android:layout_above="@+id/searchRadio"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />
 
 </RelativeLayout>
     <ListView android:id="@+id/left_drawer"

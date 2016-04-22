@@ -32,6 +32,10 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private String name;
     private String address;
@@ -138,6 +142,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
                     bookmarkBtn.setImageResource(R.drawable.ic_star_rate_black_18dp);
                     favourite = true;
                 }
+
                 final ParseObject favourites = new ParseObject(userID);
                 ParseQuery query = new ParseQuery(userID);
                 query.whereEqualTo("rID", rID);
