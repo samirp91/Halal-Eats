@@ -1,15 +1,10 @@
 package mavlana.halaleats;
 
-import android.app.Activity;
-
 import com.facebook.AccessToken;
 import com.facebook.FacebookSdk;
 
-import android.app.Fragment;
 import android.content.IntentSender;
-import android.media.Image;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
@@ -17,10 +12,8 @@ import android.view.View;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.HttpMethod;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.Auth;
@@ -28,30 +21,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.plus.Plus;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.plus.Plus;
-import com.google.android.gms.plus.model.people.Person;
 
 import org.json.JSONObject;
 
@@ -194,9 +168,6 @@ public class LoginActivity extends FragmentActivity implements
 
     private void updateUI(boolean isSignedIn) {
         if (isSignedIn) {
-            // Show signed-in user's name
-            String name = Plus.PeopleApi.getCurrentPerson(mGoogleApiClient).getDisplayName();
-
             // Set button visibility
             findViewById(R.id.plus_sign_in_button).setVisibility(View.GONE);
             findViewById(R.id.sign_out_and_disconnect).setVisibility(View.VISIBLE);
@@ -287,11 +258,6 @@ public class LoginActivity extends FragmentActivity implements
             startActivity(connected);
             finish();
 //            updateUI(true);
-        } else {
-            // Signed out, show unauthenticated UI.
-//            updateUI(false);
-
-
         }
     }
 
@@ -301,12 +267,6 @@ public class LoginActivity extends FragmentActivity implements
         // account has granted any requested permissions to our app and that we were able to
         // establish a service connection to Google Play services.
         Log.d(TAG, "onConnected:" + bundle);
-        Person.Image personPhoto = null;
-        if (Plus.PeopleApi.getCurrentPerson(mGoogleApiClient) != null) {
-            Person currentPerson = Plus.PeopleApi.getCurrentPerson(mGoogleApiClient);
-            String personName = currentPerson.getDisplayName();
-            personPhoto = currentPerson.getImage();
-        }
 
         Intent connected = new Intent(this, ProfilePage.class).putExtra("Login Type", "Google");
         startActivity(connected);
@@ -344,7 +304,7 @@ public class LoginActivity extends FragmentActivity implements
             } else {
                 // Could not resolve the connection result, show the user an
                 // error dialog.
-                showErrorDialog(connectionResult);
+//                showErrorDialog(connectionResult);
             }
         } else {
             // Show the signed-out UI
@@ -352,29 +312,29 @@ public class LoginActivity extends FragmentActivity implements
         }
     }
     // [END on_connection_failed]
-
-    private void showErrorDialog(ConnectionResult connectionResult) {
-        int errorCode = connectionResult.getErrorCode();
-
-        if (GooglePlayServicesUtil.isUserRecoverableError(errorCode)) {
-            // Show the default Google Play services error dialog which may still start an intent
-            // on our behalf if the user can resolve the issue.
-            GooglePlayServicesUtil.getErrorDialog(errorCode, this, RC_SIGN_IN,
-                    new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            mShouldResolve = false;
-                            updateUI(false);
-                        }
-                    }).show();
-        } else {
-            // No default Google Play Services error, display a message to the user.
-            String errorString = getString(R.string.play_services_error_fmt, errorCode);
-
-            mShouldResolve = false;
-            updateUI(false);
-        }
-    }
+//
+//    private void showErrorDialog(ConnectionResult connectionResult) {
+//        int errorCode = connectionResult.getErrorCode();
+//
+//        if (GooglePlayServicesUtil.isUserRecoverableError(errorCode)) {
+//            // Show the default Google Play services error dialog which may still start an intent
+//            // on our behalf if the user can resolve the issue.
+//            GooglePlayServicesUtil.getErrorDialog(errorCode, this, RC_SIGN_IN,
+//                    new DialogInterface.OnCancelListener() {
+//                        @Override
+//                        public void onCancel(DialogInterface dialog) {
+//                            mShouldResolve = false;
+//                            updateUI(false);
+//                        }
+//                    }).show();
+//        } else {
+//            // No default Google Play Services error, display a message to the user.
+////            String errorString = getString(R.string.play_services_error_fmt, errorCode);
+//
+//            mShouldResolve = false;
+//            updateUI(false);
+//        }
+//    }
 
     @Override
     public void onClick(View v) {
@@ -396,7 +356,6 @@ public class LoginActivity extends FragmentActivity implements
                 // connect in the future.
                 // [START sign_out_clicked]
                 if (mGoogleApiClient.isConnected()) {
-                    Plus.AccountApi.clearDefaultAccount(mGoogleApiClient);
                     mGoogleApiClient.disconnect();
                 }
                 // [END sign_out_clicked]

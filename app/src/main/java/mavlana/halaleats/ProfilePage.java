@@ -1,7 +1,6 @@
 package mavlana.halaleats;
 
 import android.Manifest;
-import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,12 +22,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -41,7 +37,6 @@ import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
@@ -51,7 +46,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.plus.Plus;
-import com.google.android.gms.plus.model.people.Person;
 import com.parse.FindCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
@@ -62,19 +56,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -90,15 +81,13 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private static final String TAG = "Profile Picture";
     private GoogleApiClient mGoogleApiClient;
     private TextView test;
-    private static final int PROFILE_PIC_SIZE = 400;
     private ImageView imgProfilePic;
     private String loginType;
     private String userID;
     private String name;
-    private Bitmap a;
+    private Bitmap profilePic;
     private String personPhotoUrl;
     private AutoCompleteTextView searchBar;
-    private ImageButton filter;
     private RadioGroup searchRadio;
     private ListView lv;
     private ArrayAdapter<RestaurantInfo> arrayAdapter;
@@ -107,7 +96,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private double lat = 0;
     private double lng = 0;
     private boolean listLoaded;
-    private boolean firstLoad = true;
     private TreeSet<String> restaurantsName;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
@@ -187,10 +175,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     .addApi(LocationServices.API)
                     .addScope(new Scope(Scopes.PROFILE))
                     .build();
-            createLocationRequest();
-            mGoogleApiClient.connect();
-            manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            mLastUpdateTime = "";
 
         } else {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -198,17 +182,18 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     .addOnConnectionFailedListener(this)
                     .addApi(LocationServices.API)
                     .build();
-            createLocationRequest();
-            mGoogleApiClient.connect();
-            manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            mLastUpdateTime = "";
 
             fbID = getIntent().getStringExtra("ID");
             userID = "FB" + fbID;
-            getProfileView();
             name = getIntent().getStringExtra("Name");
             test.setText(name);
         }
+
+        createLocationRequest();
+        mGoogleApiClient.connect();
+        manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        mLastUpdateTime = "";
+        getProfileView();
 
         statusOfGPS = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         if (!statusOfGPS) {
@@ -243,17 +228,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         }
 
     }
-
-    public Bitmap getUserPic(String userID) {
-        String imageURL;
-        Bitmap bitmap = null;
-        Log.d(TAG, "Loading Picture");
-        imageURL = "https://graph.facebook.com/" + userID + "/picture?type=large";
-        new LoadProfileImage(imgProfilePic).execute(imageURL);
-
-        return bitmap;
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -322,7 +296,11 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     public void onConnected(Bundle bundle) {
 
         if (loginType.equals("Google")) {
-            getProfileInformation();
+            Profile profile = new Profile(this);
+            profile.getProfileInformation();
+            name = profile.getName();
+            userID = profile.getUserID();
+            personPhotoUrl = profile.getPersonPhotoUrl();
         }
         if ((lat == 0 && lng == 0) || (mCurrentLocation == null && listLoaded)) {
             startLocationUpdates();
@@ -359,51 +337,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
-    }
-
-    private void getProfileInformation() {
-        name = getIntent().getStringExtra("Name");
-        userID = "G" + getIntent().getStringExtra("ID");
-        personPhotoUrl = getIntent().getStringExtra("Image");
-
-        // by default the profile url gives 50x50 px image only
-        // we can replace the value with whatever dimension we want by
-        // replacing sz=X
-        personPhotoUrl = personPhotoUrl.substring(0, personPhotoUrl.length() - 2)
-                + PROFILE_PIC_SIZE;
-
-        getProfileView();
-    }
-
-    /**
-     * Background Async task to load user profile picture from url
-     */
-    private class LoadProfileImage extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public LoadProfileImage(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                //Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            ImageHelper n = new ImageHelper();
-            Bitmap rounded = n.getRoundedCornerBitmap(mIcon11, 400);
-            return rounded;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            a = result;
-            bmImage.setImageBitmap(result);
-        }
     }
 
     @Override
@@ -448,9 +381,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     public void getProfileView() {
         setContentView(R.layout.activity_profile_page);
 
-//        if (lat == 0 && lng == 0) {
-//            startLocationUpdates();
-//        }
         profileView = true;
         favouritesLoaded = false;
         test = (TextView) findViewById(R.id.test);
@@ -459,8 +389,11 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         if (loginType.equals("Google")) {
             new LoadProfileImage(imgProfilePic).execute(personPhotoUrl);
         } else {
-            a = getUserPic(fbID);
-            imgProfilePic.setImageBitmap(a);
+            String imageURL;
+            Bitmap bitmap = null;
+            Log.d(TAG, "Loading Picture");
+            imageURL = "https://graph.facebook.com/" + fbID + "/picture?type=large";
+            new LoadProfileImage(imgProfilePic).execute(imageURL);
         }
         favouritesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -545,9 +478,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     public void getSearchView() {
         setContentView(R.layout.activity_search);
         profileView = false;
-//        if (lat == 0 && lng == 0) {
-//            startLocationUpdates();
-//        }
 
         if (listLoaded) {
             lv = (ListView) findViewById(R.id.list_view);
@@ -568,115 +498,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             searchRadio = (RadioGroup) findViewById(R.id.searchRadio);
             searchRadio.setVisibility(View.INVISIBLE);
             lv = (ListView) findViewById(R.id.list_view);
+            setDrawerLayout();
 
-            mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
-                @Override
-                public void onDrawerSlide(View drawerView, float slideOffset) {
-                    searchBar.clearFocus();
-
-                }
-
-                @Override
-                public void onDrawerOpened(View drawerView) {
-
-                }
-
-                @Override
-                public void onDrawerClosed(View drawerView) {
-                    if (pressed) {
-                        pressed = false;
-                        restaurantsName = new TreeSet<>();
-                        foundNew = new ArrayList<>();
-                        Iterator<Item> it = items.iterator();
-                        Item a;
-                        it.next();
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                for (Iterator<RestaurantInfo> r = listOfRestaurants.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getCity().equals(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty()) {
-                            foundNew = new ArrayList<RestaurantInfo>(listOfRestaurants);
-                        }
-
-                        List<RestaurantInfo> foundOld = new ArrayList<>(foundNew);
-                        foundNew = new ArrayList<>();
-                        int count2 = 0;
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                count2++;
-                                for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getCuisine().contains(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty() && count2 == 0) {
-                            foundNew = new ArrayList<>(foundOld);
-                        }
-
-                        foundOld = new ArrayList<>(foundNew);
-                        foundNew = new ArrayList<>();
-                        count2 = 0;
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                count2++;
-                                for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getPrice().equals(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty() && count2 == 0) {
-                            foundNew = new ArrayList<RestaurantInfo>(foundOld);
-                        }
-
-                        Collections.sort(foundNew);
-                        for (RestaurantInfo r : foundNew) {
-                            restaurantsName.add(r.getName());
-                        }
-                        ArrayList<String> temp = new ArrayList<>(restaurantsName);
-                        nameAdapter = new ArrayAdapter<>(ProfilePage.this,
-                                android.R.layout.simple_list_item_1,
-                                temp);
-                        searchBar.setAdapter(nameAdapter);
-                        arrayAdapter = new ArrayAdapter<>(ProfilePage.this,
-                                android.R.layout.simple_list_item_1,
-                                foundNew);
-                        lv.setAdapter(arrayAdapter);
-                        arrayAdapter.notifyDataSetChanged();
-                    }
-                }
-
-                @Override
-                public void onDrawerStateChanged(int newState) {
-
-                }
-            });
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
 
             Collections.sort(listOfRestaurants);
@@ -694,7 +517,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             listOfRestaurantsFiltered = listOfRestaurants;
             items = new ArrayList<>();
             items.add(citiesHeader);
-            ;
+
             for (RestaurantInfo r : listOfRestaurants) {
                 cities.add(r.getCity());
             }
@@ -769,115 +592,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             listOfRestaurants = new ArrayList<>();
             restaurantsName = new TreeSet<>();
 
+            setDrawerLayout();
 
-            mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
-                @Override
-                public void onDrawerSlide(View drawerView, float slideOffset) {
-                    searchBar.clearFocus();
-
-                }
-
-                @Override
-                public void onDrawerOpened(View drawerView) {
-
-                }
-
-                @Override
-                public void onDrawerClosed(View drawerView) {
-                    if (pressed) {
-                        pressed = false;
-                        restaurantsName = new TreeSet<>();
-                        foundNew = new ArrayList<>();
-                        Iterator<Item> it = items.iterator();
-                        Item a;
-                        it.next();
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                for (Iterator<RestaurantInfo> r = listOfRestaurants.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getCity().equals(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty()) {
-                            foundNew = new ArrayList<RestaurantInfo>(listOfRestaurants);
-                        }
-
-                        List<RestaurantInfo> foundOld = new ArrayList<>(foundNew);
-                        foundNew = new ArrayList<>();
-                        int count2 = 0;
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                count2++;
-                                for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getCuisine().contains(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty() && count2 == 0) {
-                            foundNew = new ArrayList<>(foundOld);
-                        }
-
-                        foundOld = new ArrayList<>(foundNew);
-                        foundNew = new ArrayList<>();
-                        count2 = 0;
-                        while (it.hasNext()) {
-                            a = it.next();
-                            if (a.getName2().equals("null")) {
-                                break;
-                            }
-                            if (a.isClicked()) {
-                                count2++;
-                                for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
-                                    RestaurantInfo current = r.next();
-                                    if (current.getPrice().equals(a.getName())) {
-                                        foundNew.add(current);
-                                    }
-                                }
-                            }
-
-                        }
-                        if (foundNew.isEmpty() && count2 == 0) {
-                            foundNew = new ArrayList<RestaurantInfo>(foundOld);
-                        }
-
-                        Collections.sort(foundNew);
-                        for (RestaurantInfo r : foundNew) {
-                            restaurantsName.add(r.getName());
-                        }
-                        ArrayList<String> temp = new ArrayList<>(restaurantsName);
-                        nameAdapter = new ArrayAdapter<>(ProfilePage.this,
-                                android.R.layout.simple_list_item_1,
-                                temp);
-                        searchBar.setAdapter(nameAdapter);
-                        arrayAdapter = new ArrayAdapter<>(ProfilePage.this,
-                                android.R.layout.simple_list_item_1,
-                                foundNew);
-                        lv.setAdapter(arrayAdapter);
-                        arrayAdapter.notifyDataSetChanged();
-                    }
-                }
-
-                @Override
-                public void onDrawerStateChanged(int newState) {
-
-                }
-            });
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
 
             if (favourites == null) {
@@ -923,6 +639,526 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     }
                 });
             }
+        }
+    }
+
+    private void setDrawerLayout() {
+        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+                searchBar.clearFocus();
+
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                if (pressed) {
+                    pressed = false;
+                    restaurantsName = new TreeSet<>();
+                    foundNew = new ArrayList<>();
+                    Iterator<Item> it = items.iterator();
+                    Item a;
+                    it.next();
+                    while (it.hasNext()) {
+                        a = it.next();
+                        if (a.getName2().equals("null")) {
+                            break;
+                        }
+                        if (a.isClicked()) {
+                            for (Iterator<RestaurantInfo> r = listOfRestaurants.iterator(); r.hasNext(); ) {
+                                RestaurantInfo current = r.next();
+                                if (current.getCity().equals(a.getName())) {
+                                    foundNew.add(current);
+                                }
+                            }
+                        }
+
+                    }
+                    if (foundNew.isEmpty()) {
+                        foundNew = new ArrayList<RestaurantInfo>(listOfRestaurants);
+                    }
+
+                    List<RestaurantInfo> foundOld = new ArrayList<>(foundNew);
+                    foundNew = new ArrayList<>();
+                    int count2 = 0;
+                    while (it.hasNext()) {
+                        a = it.next();
+                        if (a.getName2().equals("null")) {
+                            break;
+                        }
+                        if (a.isClicked()) {
+                            count2++;
+                            for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
+                                RestaurantInfo current = r.next();
+                                if (current.getCuisine().contains(a.getName())) {
+                                    foundNew.add(current);
+                                }
+                            }
+                        }
+
+                    }
+                    if (foundNew.isEmpty() && count2 == 0) {
+                        foundNew = new ArrayList<>(foundOld);
+                    }
+
+                    foundOld = new ArrayList<>(foundNew);
+                    foundNew = new ArrayList<>();
+                    count2 = 0;
+                    while (it.hasNext()) {
+                        a = it.next();
+                        if (a.getName2().equals("null")) {
+                            break;
+                        }
+                        if (a.isClicked()) {
+                            count2++;
+                            for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
+                                RestaurantInfo current = r.next();
+                                if (current.getPrice().equals(a.getName())) {
+                                    foundNew.add(current);
+                                }
+                            }
+                        }
+
+                    }
+                    if (foundNew.isEmpty() && count2 == 0) {
+                        foundNew = new ArrayList<RestaurantInfo>(foundOld);
+                    }
+
+                    Collections.sort(foundNew);
+                    for (RestaurantInfo r : foundNew) {
+                        restaurantsName.add(r.getName());
+                    }
+                    ArrayList<String> temp = new ArrayList<>(restaurantsName);
+                    nameAdapter = new ArrayAdapter<>(ProfilePage.this,
+                            android.R.layout.simple_list_item_1,
+                            temp);
+                    searchBar.setAdapter(nameAdapter);
+                    arrayAdapter = new ArrayAdapter<>(ProfilePage.this,
+                            android.R.layout.simple_list_item_1,
+                            foundNew);
+                    lv.setAdapter(arrayAdapter);
+                    arrayAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onDrawerStateChanged(int newState) {
+
+            }
+        });
+    }
+
+
+
+    public void onSearchButtonClicked(View view) {
+        boolean checked = ((RadioButton) view).isChecked();
+
+        switch (view.getId()) {
+            case R.id.restaurants:
+                if (checked) {
+                    ArrayList<String> temp = new ArrayList<>(restaurantsName);
+                    nameAdapter = new ArrayAdapter<>(ProfilePage.this,
+                            android.R.layout.simple_list_item_1,
+                            temp);
+                    searchBar = (AutoCompleteTextView) findViewById(R.id.search);
+                    searchBar.addTextChangedListener(new SearchWatcher());
+                    searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View view, boolean b) {
+                            if (!b) {
+                                searchRadio.setVisibility(View.INVISIBLE);
+                            } else {
+                                searchRadio.setVisibility(View.VISIBLE);
+                            }
+                        }
+                    });
+                    searchBar.setAdapter(nameAdapter);
+                    searchBar.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            searchBar.clearFocus();
+                            view = ProfilePage.this.getCurrentFocus();
+                            if (view != null) {
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                            }
+                        }
+                    });
+                }
+                break;
+            case R.id.address:
+                if (checked) {
+                    searchBar = (AutoCompleteTextView) findViewById(R.id.search);
+                    searchBar.addTextChangedListener(new SearchWatcher());
+                    searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View view, boolean b) {
+                            if (!b) {
+                                searchRadio.setVisibility(View.INVISIBLE);
+                            } else {
+                                searchRadio.setVisibility(View.VISIBLE);
+                            }
+                        }
+                    });
+                    searchBar.setAdapter(new GooglePlacesAutocompleteAdapter(this, android.R.layout.simple_list_item_1));
+                    searchBar.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            String str = (String) parent.getItemAtPosition(position);
+                            System.out.println("Address Selected: " + str);
+                            final Geocoder coder = new Geocoder(ProfilePage.this);
+                            final List<Address>[] addressArray = new ArrayList[1];
+                            addressArray[0] = new ArrayList<>();
+                            final String[] address = new String[1];
+                            try {
+                                address[0] = str;
+                                try {
+                                    addressArray[0] = coder.getFromLocationName(address[0], 5, 43.5742334, -80.530535, 45.400196, -75.696550);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                final List<Address> finalAddressArray = addressArray[0];
+
+                                lat = finalAddressArray.get(0).getLatitude();
+                                lng = finalAddressArray.get(0).getLongitude();
+
+                                for (RestaurantInfo r : listOfRestaurants) {
+                                    r.updateDistance(lat, lng);
+
+                                }
+                                if (!(foundNew == null)) {
+                                    for (RestaurantInfo r : foundNew) {
+                                        r.updateDistance(lat, lng);
+                                    }
+                                    Collections.sort(foundNew);
+                                }
+                                Collections.sort(listOfRestaurants);
+
+                                arrayAdapter.notifyDataSetChanged();
+                                searchBar.setText("");
+                                searchBar.clearFocus();
+                                view = ProfilePage.this.getCurrentFocus();
+                                if (view != null) {
+                                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                                }
+                                final RadioButton radio1 = (RadioButton) findViewById(R.id.restaurants);
+                                radio1.setChecked(true);
+
+                            } catch (Exception e) {
+
+                            }
+
+                        }
+                    });
+
+                }
+                break;
+        }
+    }
+
+    private class SearchWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence c, int i, int i2, int i3) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence c, int i, int i2, int i3) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+            mSearchQuery = searchBar.getText().toString();
+            if (!(foundNew == null)) {
+                listOfRestaurantsFiltered = performSearch(foundNew, mSearchQuery);
+            } else {
+                listOfRestaurantsFiltered = performSearch(listOfRestaurants, mSearchQuery);
+            }
+            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
+                    android.R.layout.simple_list_item_1,
+                    listOfRestaurantsFiltered);
+            lv.setAdapter(arrayAdapter);
+            arrayAdapter.notifyDataSetChanged();
+        }
+
+    }
+
+    /**
+     * Goes through the given list and filters it according to the given query.
+     *
+     * @param movies list given as search sample
+     * @param query  to be searched
+     * @return new filtered list
+     */
+    private List<RestaurantInfo> performSearch(List<RestaurantInfo> movies, String query) {
+
+        // First we split the query so that we're able
+        // to search word by word (in lower case).
+        String queryByWords = query.toLowerCase();
+
+        // Empty list to fill with matches.
+        List<RestaurantInfo> moviesFiltered = new ArrayList<RestaurantInfo>();
+
+        // Go through initial releases and perform search.
+        for (RestaurantInfo movie : movies) {
+
+            // Content to search through (in lower case).
+            String content = (
+                    movie.getName()
+            ).toLowerCase();
+
+            // All query words have to be contained,
+            // otherwise the release is filtered out.
+            if (content.contains(queryByWords)) {
+                moviesFiltered.add(movie);
+
+
+            }
+
+        }
+
+        return moviesFiltered;
+    }
+
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView parent, View view, int position, long id) {
+            try {
+                ListItem city = (ListItem) mDrawerList.getItemAtPosition(position);
+                if (city.isClicked()) {
+                    view.setActivated(false);
+                    ;
+                    //view.setBackgroundResource(R.color.black);
+                    city.toggleClicked();
+                } else {
+                    //view.setBackgroundResource(R.color.green);
+                    view.setActivated(true);
+                    city.toggleClicked();
+                }
+                pressed = true;
+            } catch (Exception e) {
+            }
+
+        }
+    }
+
+    @Override
+    public void onRestart() {
+        if (activityStarted) {
+            count = 1;
+            activityStarted = false;
+            favourites = new ArrayList<>();
+            ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
+            rIDs = new ArrayList<>();
+            query.whereExists("rID");
+            query.findInBackground(new FindCallback<ParseObject>() {
+                public void done(List<ParseObject> objects, ParseException e) {
+                    if (e == null) {
+                        count = 1;
+                        for (ParseObject post : objects) {
+                            String[] info = new String[11];
+                            info[0] = post.getString("rID");
+                            info[1] = post.getString("RestaurantName");
+                            info[2] = post.getString("Address");
+                            info[3] = post.getString("PhoneNumber");
+                            info[4] = post.getString("Latitude");
+                            info[5] = post.getString("Longitude");
+                            info[6] = post.getString("Website");
+                            info[7] = post.getString("Location");
+                            info[8] = post.getString("Cuisine");
+                            info[9] = post.getString("Price");
+                            info[10] = post.getString("Time");
+
+                            RestaurantInfo r = new RestaurantInfo(info);
+                            r.setFavourite(true);
+                            r.updateDistance(lat, lng);
+                            favourites.add(r);
+
+                            if (objects.size() == count) {
+                                favouritesLoaded = true;
+                                Collections.sort(favourites);
+                                if (profileView) {
+                                    favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
+                                            favourites);
+                                    favouritesList.setAdapter(favouritesAdapter);
+                                    favouritesAdapter.notifyDataSetChanged();
+                                }
+                            } else {
+                                count++;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        super.onRestart();
+    }
+
+    public static ArrayList autocomplete(String input) {
+        ArrayList resultList = null;
+        HttpURLConnection conn = null;
+        StringBuilder jsonResults = new StringBuilder();
+        try {
+            StringBuilder sb = new StringBuilder(PLACES_API_BASE + TYPE_AUTOCOMPLETE + OUT_JSON);
+            sb.append("?key=" + API_KEY);
+            sb.append("&components=country:ca");
+            sb.append("&input=" + URLEncoder.encode(input, "utf8"));
+            URL url = new URL(sb.toString());
+            conn = (HttpURLConnection) url.openConnection();
+            InputStreamReader in = new InputStreamReader(conn.getInputStream());
+            // Load the results into a StringBuilder
+            int read;
+            char[] buff = new char[1024];
+            while ((read = in.read(buff)) != -1) {
+                jsonResults.append(buff, 0, read);
+            }
+
+        } catch (MalformedURLException e) {
+            Log.e(LOG_TAG, "Error processing Places API URL", e);
+            return resultList;
+
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error connecting to Places API", e);
+            return resultList;
+
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+
+        try {
+            // Create a JSON object hierarchy from the results
+            JSONObject jsonObj = new JSONObject(jsonResults.toString());
+            JSONArray predsJsonArray = jsonObj.getJSONArray("predictions");
+            // Extract the Place descriptions from the results
+            resultList = new ArrayList(predsJsonArray.length());
+            for (int i = 0; i < predsJsonArray.length(); i++) {
+                System.out.println(predsJsonArray.getJSONObject(i).getString("description"));
+                System.out.println("============================================================");
+                resultList.add(predsJsonArray.getJSONObject(i).getString("description"));
+            }
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Cannot process JSON results", e);
+        }
+        return resultList;
+    }
+
+    class GooglePlacesAutocompleteAdapter extends ArrayAdapter implements Filterable {
+        private ArrayList resultList;
+
+        public GooglePlacesAutocompleteAdapter(Context context, int textViewResourceId) {
+            super(context, textViewResourceId);
+        }
+
+        @Override
+        public int getCount() {
+            return resultList.size();
+        }
+
+        @Override
+        public String getItem(int index) {
+            return (String) resultList.get(index);
+        }
+
+        @Override
+        public Filter getFilter() {
+            Filter filter = new Filter() {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    FilterResults filterResults = new FilterResults();
+                    if (constraint != null) {
+                        // Retrieve the autocomplete results.
+                        resultList = autocomplete(constraint.toString());
+
+                        // Assign the data to the FilterResults
+                        filterResults.values = resultList;
+                        filterResults.count = resultList.size();
+                    }
+                    return filterResults;
+                }
+
+                @Override
+                protected void publishResults(CharSequence constraint, FilterResults results) {
+                    if (results != null && results.count > 0) {
+                        notifyDataSetChanged();
+                    } else {
+                        notifyDataSetInvalidated();
+                    }
+                }
+            };
+            return filter;
+        }
+    }
+
+    private void askForPermission() {
+        int permissionCheckCoarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION);
+        int permissionCheckFine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            // No explanation needed, we can request the permission.
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSIONS);
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_PERMISSIONS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case LOCATION_PERMISSIONS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    if (!mRequestingLocationUpdates) {
+                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                            return;
+                        }
+                        LocationServices.FusedLocationApi.requestLocationUpdates(
+                                mGoogleApiClient, mLocationRequest, this);
+                        mRequestingLocationUpdates = true;
+                    }
+                    else{
+                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        mRequestingLocationUpdates = false;
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
         }
     }
 
@@ -1147,15 +1383,13 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             arrayAdapter.notifyDataSetChanged();
 //            stopLocationUpdates();
 
-        }
-
-        else if (profileView && favouritesLoaded && mGoogleApiClient.isConnected()){
+        } else if (profileView && favouritesLoaded && mGoogleApiClient.isConnected()) {
             mCurrentLocation = location;
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
             lat = location.getLatitude();
             lng = location.getLongitude();
 
-            for (RestaurantInfo r : favourites){
+            for (RestaurantInfo r : favourites) {
                 r.updateDistance(lat, lng);
             }
             Collections.sort(favourites);
@@ -1166,402 +1400,36 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
     }
 
-    public void onSearchButtonClicked(View view) {
-        boolean checked = ((RadioButton) view).isChecked();
-
-        switch (view.getId()) {
-            case R.id.restaurants:
-                if (checked) {
-                    ArrayList<String> temp = new ArrayList<>(restaurantsName);
-                    nameAdapter = new ArrayAdapter<>(ProfilePage.this,
-                            android.R.layout.simple_list_item_1,
-                            temp);
-                    searchBar = (AutoCompleteTextView) findViewById(R.id.search);
-                    searchBar.addTextChangedListener(new SearchWatcher());
-                    searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                        @Override
-                        public void onFocusChange(View view, boolean b) {
-                            if (!b) {
-                                searchRadio.setVisibility(View.INVISIBLE);
-                            } else {
-                                searchRadio.setVisibility(View.VISIBLE);
-                            }
-                        }
-                    });
-                    searchBar.setAdapter(nameAdapter);
-                    searchBar.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                            searchBar.clearFocus();
-                            view = ProfilePage.this.getCurrentFocus();
-                            if (view != null) {
-                                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                            }
-                        }
-                    });
-                }
-                break;
-            case R.id.address:
-                if (checked) {
-                    searchBar = (AutoCompleteTextView) findViewById(R.id.search);
-                    searchBar.addTextChangedListener(new SearchWatcher());
-                    searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                        @Override
-                        public void onFocusChange(View view, boolean b) {
-                            if (!b) {
-                                searchRadio.setVisibility(View.INVISIBLE);
-                            } else {
-                                searchRadio.setVisibility(View.VISIBLE);
-                            }
-                        }
-                    });
-                    searchBar.setAdapter(new GooglePlacesAutocompleteAdapter(this, android.R.layout.simple_list_item_1));
-                    searchBar.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                            String str = (String) parent.getItemAtPosition(position);
-                            System.out.println("Address Selected: " + str);
-                            final Geocoder coder = new Geocoder(ProfilePage.this);
-                            final List<Address>[] addressArray = new ArrayList[1];
-                            addressArray[0] = new ArrayList<>();
-                            final String[] address = new String[1];
-                            try {
-                                address[0] = str;
-                                try {
-                                    addressArray[0] = coder.getFromLocationName(address[0], 5, 43.5742334, -80.530535, 45.400196, -75.696550);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                                final List<Address> finalAddressArray = addressArray[0];
-
-                                lat = finalAddressArray.get(0).getLatitude();
-                                lng = finalAddressArray.get(0).getLongitude();
-
-                                for (RestaurantInfo r : listOfRestaurants) {
-                                    r.updateDistance(lat, lng);
-
-                                }
-                                if (!(foundNew == null)) {
-                                    for (RestaurantInfo r : foundNew) {
-                                        r.updateDistance(lat, lng);
-                                    }
-                                    Collections.sort(foundNew);
-                                }
-                                Collections.sort(listOfRestaurants);
-
-                                arrayAdapter.notifyDataSetChanged();
-                                searchBar.setText("");
-                                searchBar.clearFocus();
-                                view = ProfilePage.this.getCurrentFocus();
-                                if (view != null) {
-                                    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                                }
-                                final RadioButton radio1 = (RadioButton) findViewById(R.id.restaurants);
-                                radio1.setChecked(true);
-
-                            }
-                            catch (Exception e){
-
-                            }
-
-                        }
-                    });
-
-                }
-                break;
-        }
-    }
-
-    private class SearchWatcher implements TextWatcher {
-        @Override
-        public void beforeTextChanged(CharSequence c, int i, int i2, int i3) {
-
-        }
-
-        @Override
-        public void onTextChanged(CharSequence c, int i, int i2, int i3) {
-
-        }
-
-        @Override
-        public void afterTextChanged(Editable editable) {
-            mSearchQuery = searchBar.getText().toString();
-            if (!(foundNew == null)) {
-                listOfRestaurantsFiltered = performSearch(foundNew, mSearchQuery);
-            } else {
-                listOfRestaurantsFiltered = performSearch(listOfRestaurants, mSearchQuery);
-            }
-            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1,
-                    listOfRestaurantsFiltered);
-            lv.setAdapter(arrayAdapter);
-            arrayAdapter.notifyDataSetChanged();
-        }
-
-    }
-
     /**
-     * Goes through the given list and filters it according to the given query.
-     *
-     * @param movies list given as search sample
-     * @param query  to be searched
-     * @return new filtered list
+     * Background Async task to load user profile picture from url
      */
-    private List<RestaurantInfo> performSearch(List<RestaurantInfo> movies, String query) {
+    private class LoadProfileImage extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
 
-        // First we split the query so that we're able
-        // to search word by word (in lower case).
-        String queryByWords = query.toLowerCase();
-
-        // Empty list to fill with matches.
-        List<RestaurantInfo> moviesFiltered = new ArrayList<RestaurantInfo>();
-
-        // Go through initial releases and perform search.
-        for (RestaurantInfo movie : movies) {
-
-            // Content to search through (in lower case).
-            String content = (
-                    movie.getName()
-            ).toLowerCase();
-
-            // All query words have to be contained,
-            // otherwise the release is filtered out.
-            if (content.contains(queryByWords)) {
-                moviesFiltered.add(movie);
-
-
-            }
-
+        public LoadProfileImage(ImageView bmImage) {
+            this.bmImage = bmImage;
         }
 
-        return moviesFiltered;
-    }
-
-    private class DrawerItemClickListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView parent, View view, int position, long id) {
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
             try {
-                ListItem city = (ListItem) mDrawerList.getItemAtPosition(position);
-                if (city.isClicked()) {
-                    view.setActivated(false);
-                    ;
-                    //view.setBackgroundResource(R.color.black);
-                    city.toggleClicked();
-                } else {
-                    //view.setBackgroundResource(R.color.green);
-                    view.setActivated(true);
-                    city.toggleClicked();
-                }
-                pressed = true;
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
             } catch (Exception e) {
+                //Log.e("Error", e.getMessage());
+                e.printStackTrace();
             }
-
-        }
-    }
-
-    @Override
-    public void onRestart(){
-        if (activityStarted){
-            count = 1;
-            activityStarted = false;
-            favourites = new ArrayList<>();
-            ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
-            rIDs = new ArrayList<>();
-            query.whereExists("rID");
-            query.findInBackground(new FindCallback<ParseObject>() {
-                public void done(List<ParseObject> objects, ParseException e) {
-                    if (e == null) {
-                        count = 1;
-                        for (ParseObject post : objects) {
-                            String[] info = new String[11];
-                            info[0] = post.getString("rID");
-                            info[1] = post.getString("RestaurantName");
-                            info[2] = post.getString("Address");
-                            info[3] = post.getString("PhoneNumber");
-                            info[4] = post.getString("Latitude");
-                            info[5] = post.getString("Longitude");
-                            info[6] = post.getString("Website");
-                            info[7] = post.getString("Location");
-                            info[8] = post.getString("Cuisine");
-                            info[9] = post.getString("Price");
-                            info[10] = post.getString("Time");
-
-                            RestaurantInfo r = new RestaurantInfo(info);
-                            r.setFavourite(true);
-                            r.updateDistance(lat, lng);
-                            favourites.add(r);
-
-                            if (objects.size() == count) {
-                                favouritesLoaded = true;
-                                Collections.sort(favourites);
-                                if (profileView) {
-                                    favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
-                                            favourites);
-                                    favouritesList.setAdapter(favouritesAdapter);
-                                    favouritesAdapter.notifyDataSetChanged();
-                                }
-                            } else {
-                                count++;
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        super.onRestart();
-    }
-
-    public static ArrayList autocomplete(String input) {
-        ArrayList resultList = null;
-        HttpURLConnection conn = null;
-        StringBuilder jsonResults = new StringBuilder();
-        try {
-            StringBuilder sb = new StringBuilder(PLACES_API_BASE + TYPE_AUTOCOMPLETE + OUT_JSON);
-            sb.append("?key=" + API_KEY);
-            sb.append("&components=country:ca");
-            sb.append("&input=" + URLEncoder.encode(input, "utf8"));
-            URL url = new URL(sb.toString());
-            conn = (HttpURLConnection) url.openConnection();
-            InputStreamReader in = new InputStreamReader(conn.getInputStream());
-            // Load the results into a StringBuilder
-            int read;
-            char[] buff = new char[1024];
-            while ((read = in.read(buff)) != -1) {
-                jsonResults.append(buff, 0, read);
-            }
-
-        } catch (MalformedURLException e) {
-            Log.e(LOG_TAG, "Error processing Places API URL", e);
-            return resultList;
-
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "Error connecting to Places API", e);
-            return resultList;
-
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            ImageHelper n = new ImageHelper();
+            Bitmap rounded = n.getRoundedCornerBitmap(mIcon11, 400);
+            return rounded;
         }
 
-        try {
-            // Create a JSON object hierarchy from the results
-            JSONObject jsonObj = new JSONObject(jsonResults.toString());
-            JSONArray predsJsonArray = jsonObj.getJSONArray("predictions");
-            // Extract the Place descriptions from the results
-            resultList = new ArrayList(predsJsonArray.length());
-            for (int i = 0; i < predsJsonArray.length(); i++) {
-                System.out.println(predsJsonArray.getJSONObject(i).getString("description"));
-                System.out.println("============================================================");
-                resultList.add(predsJsonArray.getJSONObject(i).getString("description"));
-            }
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Cannot process JSON results", e);
-        }
-        return resultList;
-    }
-
-    class GooglePlacesAutocompleteAdapter extends ArrayAdapter implements Filterable {
-        private ArrayList resultList;
-
-        public GooglePlacesAutocompleteAdapter(Context context, int textViewResourceId) {
-            super(context, textViewResourceId);
-        }
-
-        @Override
-        public int getCount() {
-            return resultList.size();
-        }
-
-        @Override
-        public String getItem(int index) {
-            return (String) resultList.get(index);
-        }
-
-        @Override
-        public Filter getFilter() {
-            Filter filter = new Filter() {
-                @Override
-                protected FilterResults performFiltering(CharSequence constraint) {
-                    FilterResults filterResults = new FilterResults();
-                    if (constraint != null) {
-                        // Retrieve the autocomplete results.
-                        resultList = autocomplete(constraint.toString());
-
-                        // Assign the data to the FilterResults
-                        filterResults.values = resultList;
-                        filterResults.count = resultList.size();
-                    }
-                    return filterResults;
-                }
-
-                @Override
-                protected void publishResults(CharSequence constraint, FilterResults results) {
-                    if (results != null && results.count > 0) {
-                        notifyDataSetChanged();
-                    } else {
-                        notifyDataSetInvalidated();
-                    }
-                }
-            };
-            return filter;
-        }
-    }
-
-    private void askForPermission() {
-        int permissionCheckCoarse = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-        int permissionCheckFine = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            // No explanation needed, we can request the permission.
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSIONS);
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    LOCATION_PERMISSIONS);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case LOCATION_PERMISSIONS: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                    if (!mRequestingLocationUpdates) {
-                        LocationServices.FusedLocationApi.requestLocationUpdates(
-                                mGoogleApiClient, mLocationRequest, this);
-                        mRequestingLocationUpdates = true;
-                    }
-                    else{
-                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-                        mRequestingLocationUpdates = false;
-                    }
-
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                }
-                return;
-            }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
+        protected void onPostExecute(Bitmap result) {
+            profilePic = result;
+            bmImage.setImageBitmap(result);
         }
     }
 
 }
+
