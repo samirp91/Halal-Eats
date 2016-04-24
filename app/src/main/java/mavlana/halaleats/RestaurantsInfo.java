@@ -1,13 +1,16 @@
 package mavlana.halaleats;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AlertDialog;
 import android.view.Menu;
@@ -106,7 +109,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         bookmarkBtn = (ImageButton) findViewById(R.id.bookmarkBtn);
         websiteBtn = (ImageButton) findViewById(R.id.websiteBtn);
 
-        if (favourite){
+        if (favourite) {
             bookmarkBtn.setImageResource(R.drawable.ic_star_rate_black_18dp);
         }
 
@@ -130,15 +133,13 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         websiteBtn.setBackgroundColor(Color.TRANSPARENT);
 
 
-
         bookmarkBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (favourite){
+                if (favourite) {
                     bookmarkBtn.setImageResource(R.drawable.ic_star_border_black_18dp);
                     favourite = false;
-                }
-                else{
+                } else {
                     bookmarkBtn.setImageResource(R.drawable.ic_star_rate_black_18dp);
                     favourite = true;
                 }
@@ -176,42 +177,42 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         });
 
 
+        directionsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (myLat.matches("(0.0)*") && myLng.matches("(0.0)*")) {
+                    AlertDialog.Builder alertDialog = new AlertDialog.Builder(RestaurantsInfo.this);
 
-            directionsBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (myLat.matches("(0.0)*") && myLng.matches("(0.0)*")) {
-                        AlertDialog.Builder alertDialog = new AlertDialog.Builder(RestaurantsInfo.this);
+                    //Setting Dialog Title
+                    alertDialog.setTitle("No Location Set");
 
-                        //Setting Dialog Title
-                        alertDialog.setTitle("No Location Set");
+                    //Setting Dialog Message
+                    alertDialog.setMessage("To get directions, please turn on location ");
 
-                        //Setting Dialog Message
-                        alertDialog.setMessage("To get directions, please turn on location ");
+                    //On Pressing Setting button
+                    alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
-                        //On Pressing Setting button
-                        alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
 
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-
-                        alertDialog.show();
-                    } else {
-                        Uri directions = Uri.parse("http://maps.google.com/maps?saddr=" +
-                                myLat + "," + myLng + "&daddr=" + lat + "," + lng);
-                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, directions);
-                        startActivity(mapIntent);
-                    }
+                    alertDialog.show();
+                } else {
+                    address = address.replace(' ', '+');
+                    location = location.replace(' ', '+');
+                    Uri directions = Uri.parse("http://maps.google.com/maps?saddr=" +
+                            myLat + "," + myLng + "&daddr=" + address + ",+" + location);
+                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, directions);
+                    startActivity(mapIntent);
                 }
-            });
+            }
+        });
 
-        if(number.equals(" ")){
+        if (number.equals(" ")) {
             callBtn.setVisibility(View.INVISIBLE);
-        }
-        else{
+        } else {
             callBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -223,7 +224,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
 
         }
 
-        if (web.equals(" ")){
+        if (web.equals(" ")) {
             websiteBtn.setVisibility(View.INVISIBLE);
         } else {
             websiteBtn.setOnClickListener(new View.OnClickListener() {
@@ -236,8 +237,6 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
             });
 
         }
-
-
 
 
     }
@@ -294,7 +293,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
 
     @Override
     public void onLocationChanged(Location location) {
-        if (mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient.isConnected()) {
             myLat = String.valueOf(location.getLatitude());
             myLng = String.valueOf(location.getLongitude());
             stopLocationUpdates();
@@ -336,6 +335,16 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
     protected void startLocationUpdates() {
         // The final argument to {@code requestLocationUpdates()} is a LocationListener
         // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
     }
