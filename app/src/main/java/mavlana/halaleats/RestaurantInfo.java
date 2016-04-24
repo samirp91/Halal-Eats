@@ -3,7 +3,6 @@ package mavlana.halaleats;
 import android.location.Location;
 
 import java.text.DecimalFormat;
-import java.util.Comparator;
 
 /**
  * Created by samir on 13/09/15.
@@ -153,7 +152,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
 
     public String cuisineString(){
         String[] cuisineSplit;
-        String cuisineStr = "" ;
+        String cuisineStr;
         cuisineSplit = this.getCuisine().split("\\+");
         int count = cuisineSplit.length;
         if (count == 1){
@@ -164,8 +163,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             cuisineStr = cuisineStr + ", " + cuisineSplit[i];
         }
 
-        String finalString = cuisineStr.trim();
-        return finalString;
+        return cuisineStr.trim();
 
     }
     public String timeToString(){

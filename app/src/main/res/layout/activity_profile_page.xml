@@ -59,6 +59,7 @@
             style = "@style/navbar_button"
             android:drawableTop = "@drawable/search_selector"
             android:text = "Search"
+            android:layout_marginStart="5dp"
             android:layout_marginLeft = "5dp"
             android:onClick="onRadioButtonClicked"
             />

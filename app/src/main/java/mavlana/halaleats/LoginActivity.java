@@ -43,7 +43,6 @@ public class LoginActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "MainActivity";
-    private LoginButton loginButton;
     private CallbackManager callbackManager;
     private boolean loggedIn = false;
 
@@ -91,7 +90,7 @@ public class LoginActivity extends FragmentActivity implements
                         }
                     }).executeAsync();
         }
-        loginButton = (LoginButton)findViewById(R.id.login_button);
+        LoginButton loginButton = (LoginButton) findViewById(R.id.login_button);
         loginButton.setReadPermissions("public_profile");
 
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {

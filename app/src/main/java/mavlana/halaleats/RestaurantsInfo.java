@@ -35,10 +35,6 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private String name;
     private String address;
@@ -52,15 +48,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
     private String myLng;
     private String price;
     private String location;
-    private TextView nameText;
-    private TextView addressText;
-    private TextView cuisineText;
-    private TextView timings;
-    private ImageButton directionsBtn;
-    private ImageButton callBtn;
     private ImageButton bookmarkBtn;
-    private ImageButton websiteBtn;
-    private LocationManager manager;
     private boolean favourite;
     private String userID;
     private String rID;
@@ -100,14 +88,14 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        nameText = (TextView) findViewById(R.id.restaurant_name);
-        addressText = (TextView) findViewById(R.id.restaurant_address);
-        cuisineText = (TextView) findViewById(R.id.restaurant_cuisine);
-        timings = (TextView) findViewById(R.id.hours);
-        directionsBtn = (ImageButton) findViewById(R.id.directionsBtn);
-        callBtn = (ImageButton) findViewById(R.id.callBtn);
+        TextView nameText = (TextView) findViewById(R.id.restaurant_name);
+        TextView addressText = (TextView) findViewById(R.id.restaurant_address);
+        TextView cuisineText = (TextView) findViewById(R.id.restaurant_cuisine);
+        TextView timings = (TextView) findViewById(R.id.hours);
+        ImageButton directionsBtn = (ImageButton) findViewById(R.id.directionsBtn);
+        ImageButton callBtn = (ImageButton) findViewById(R.id.callBtn);
         bookmarkBtn = (ImageButton) findViewById(R.id.bookmarkBtn);
-        websiteBtn = (ImageButton) findViewById(R.id.websiteBtn);
+        ImageButton websiteBtn = (ImageButton) findViewById(R.id.websiteBtn);
 
         if (favourite) {
             bookmarkBtn.setImageResource(R.drawable.ic_star_rate_black_18dp);
@@ -125,7 +113,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
                 .build();
         createLocationRequest();
         mGoogleApiClient.connect();
-        manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         bookmarkBtn.setBackgroundColor(Color.TRANSPARENT);
         callBtn.setBackgroundColor(Color.TRANSPARENT);

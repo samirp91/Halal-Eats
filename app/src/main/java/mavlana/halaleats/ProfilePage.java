@@ -12,13 +12,13 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -31,7 +31,6 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
@@ -77,7 +76,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private ArrayList<RestaurantInfo> listOfRestaurants;
     private static final int LOCATION_PERMISSIONS = 21;
     private List<RestaurantInfo> foundNew;
-    private String mSearchQuery = "";
     private static final String TAG = "Profile Picture";
     private GoogleApiClient mGoogleApiClient;
     private TextView test;
@@ -85,7 +83,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private String loginType;
     private String userID;
     private String name;
-    private Bitmap profilePic;
     private String personPhotoUrl;
     private AutoCompleteTextView searchBar;
     private RadioGroup searchRadio;
@@ -390,7 +387,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             new LoadProfileImage(imgProfilePic).execute(personPhotoUrl);
         } else {
             String imageURL;
-            Bitmap bitmap = null;
             Log.d(TAG, "Loading Picture");
             imageURL = "https://graph.facebook.com/" + fbID + "/picture?type=large";
             new LoadProfileImage(imgProfilePic).execute(imageURL);
@@ -548,7 +544,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             searchRadio = (RadioGroup) findViewById(R.id.searchRadio);
             searchRadio.setVisibility(View.INVISIBLE);
             lv = (ListView) findViewById(R.id.list_view);
-            RestaurantInfoArray restaurants = new RestaurantInfoArray();
             listOfRestaurants = new ArrayList<>();
             restaurantsName = new TreeSet<>();
 
@@ -603,7 +598,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     }
 
     private void setDrawerLayout() {
-        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
+        mDrawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(View drawerView, float slideOffset) {
                 searchBar.clearFocus();
@@ -833,7 +828,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
         @Override
         public void afterTextChanged(Editable editable) {
-            mSearchQuery = searchBar.getText().toString();
+            String mSearchQuery = searchBar.getText().toString();
             if (!(foundNew == null)) {
                 listOfRestaurantsFiltered = performSearch(foundNew, mSearchQuery);
             } else {
@@ -892,7 +887,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 ListItem city = (ListItem) mDrawerList.getItemAtPosition(position);
                 if (city.isClicked()) {
                     view.setActivated(false);
-                    ;
                     //view.setBackgroundResource(R.color.black);
                     city.toggleClicked();
                 } else {
@@ -1028,7 +1022,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
         @Override
         public Filter getFilter() {
-            Filter filter = new Filter() {
+            return new Filter() {
                 @Override
                 protected FilterResults performFiltering(CharSequence constraint) {
                     FilterResults filterResults = new FilterResults();
@@ -1052,7 +1046,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     }
                 }
             };
-            return filter;
         }
     }
 
@@ -1112,7 +1105,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                 }
-                return;
             }
 
             // other 'case' lines to check for other
@@ -1162,7 +1154,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     listOfRestaurantsFiltered = listOfRestaurants;
                     items = new ArrayList<>();
                     items.add(citiesHeader);
-                    ;
                     for (RestaurantInfo r : listOfRestaurants) {
                         cities.add(r.getCity());
                     }
@@ -1388,12 +1379,10 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 e.printStackTrace();
             }
             ImageHelper n = new ImageHelper();
-            Bitmap rounded = n.getRoundedCornerBitmap(mIcon11, 400);
-            return rounded;
+            return n.getRoundedCornerBitmap(mIcon11, 400);
         }
 
         protected void onPostExecute(Bitmap result) {
-            profilePic = result;
             bmImage.setImageBitmap(result);
         }
     }

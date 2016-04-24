@@ -39,12 +39,7 @@ public class ListItem implements Item {
 
 
     public void toggleClicked(){
-        if (isClicked()){
-            this.clicked = false;
-        }
-        else{
-            this.clicked = true;
-        }
+        this.clicked = !isClicked();
     }
 
     @Override
