@@ -27,6 +27,16 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     private String distance;
     private String website;
 
+    public String getPlaceID() {
+        return placeID;
+    }
+
+    public void setPlaceID(String placeID) {
+        this.placeID = placeID;
+    }
+
+    private String placeID;
+
     private Boolean favourite;
 
     public String getCuisine() {
@@ -98,6 +108,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             this.setCuisine(info[8]);
             this.setPrice(info[9].trim());
             this.setTime(info[10]);
+            this.setPlaceID(info[11]);
             this.favourite = false;
         }
         catch (Exception e){

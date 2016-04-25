@@ -7,6 +7,8 @@
     <string name="server_client_id">745274579869-mloloteqoj9e4mfugigj5ct02qfpdqh7.apps.googleusercontent.com</string>
 
 
+    <string name="google_app_id">halal-eats</string>
+
     <!-- Google Play Services error for Toast -->
     <string name="play_services_error_fmt">Google Play Services Error: %i</string>
 

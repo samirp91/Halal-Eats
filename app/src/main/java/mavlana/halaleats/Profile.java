@@ -33,7 +33,7 @@ public class Profile {
     }
 
     public String getName(){
-        return this.name;
+        return activity.getIntent().getStringExtra("Name");
     }
 
     public void setUserID(String userID){
@@ -41,7 +41,7 @@ public class Profile {
     }
 
     public String getUserID(){
-        return this.userID;
+        return "G" + activity.getIntent().getStringExtra("ID");
     }
 
     public void setPersonPhotoUrl(String personPhotoUrl){
@@ -49,7 +49,7 @@ public class Profile {
     }
 
     public String getPersonPhotoUrl(){
-        return this.personPhotoUrl;
+        return activity.getIntent().getStringExtra("Image");
     }
 
 }
