@@ -17,27 +17,46 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     }
 
     private String rID;
-    private String name;
+    private String restaurantName;
     private String address;
     private String phoneNumber;
 
-    private double lng;
-    private double lat;
+    private double longitude;
+    private double latitude;
 
     private String distance;
     private String website;
 
-    public String getPlaceID() {
-        return placeID;
-    }
-
-    public void setPlaceID(String placeID) {
-        this.placeID = placeID;
-    }
-
-    private String placeID;
+    private String cuisine;
+    private String price;
 
     private Boolean favourite;
+
+    private String time;
+
+    private String city;
+
+    public RestaurantInfo(String [] info){
+        try {
+            this.setrID(info[0]);
+            this.setName(info[1]);
+            this.setAddress(info[2]);
+            this.setPhoneNumber(info[3]);
+            this.setLatitude(Double.valueOf(info[4]));
+            this.setLongitude(Double.valueOf(info[5]));
+            this.setWebsite(info[6]);
+            this.setCity(info[7]);
+            this.setCuisine(info[8]);
+            this.setPrice(info[9].trim());
+            this.setTime(info[10]);
+            this.favourite = false;
+        }
+        catch (Exception e){
+            System.out.println(this.getName());
+        }
+    }
+
+    public RestaurantInfo(){} //Need this for firebase to work.
 
     public String getCuisine() {
         return cuisine;
@@ -55,9 +74,6 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         this.price = price;
     }
 
-    private String cuisine;
-    private String price;
-
     public String getTime() {
         return time;
     }
@@ -65,9 +81,6 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     public void setTime(String time) {
         this.time = time;
     }
-
-    private String time;
-
 
     public String getCity() {
         return city;
@@ -77,14 +90,12 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         this.city = city;
     }
 
-    private String city;
-
-    public void setLng(double lng) {
-        this.lng = lng;
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
-    public void setLat(double lat) {
-        this.lat = lat;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
     public String getWebsite() {
@@ -95,32 +106,12 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         this.website = website;
     }
 
-    public RestaurantInfo(String [] info){
-        try {
-            this.setrID(info[0]);
-            this.setName(info[1]);
-            this.setAddress(info[2]);
-            this.setPhoneNumber(info[3]);
-            this.setLat(Double.valueOf(info[4]));
-            this.setLng(Double.valueOf(info[5]));
-            this.setWebsite(info[6]);
-            this.setCity(info[7]);
-            this.setCuisine(info[8]);
-            this.setPrice(info[9].trim());
-            this.setTime(info[10]);
-            this.setPlaceID(info[11]);
-            this.favourite = false;
-        }
-        catch (Exception e){
-            System.out.println(this.getName());
-        }
-    }
-    public double getLng() {
-        return lng;
+    public double getLongitude() {
+        return longitude;
     }
 
-    public double getLat() {
-        return lat;
+    public double getLatitude() {
+        return latitude;
     }
 
     public void setDistance(String distance) { this.distance = distance; }
@@ -128,23 +119,29 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     public String getDistance() { return this.distance; }
 
     public String getName() {
-        return name;
+        return restaurantName;
     }
+
     public void setName(String name) {
-        this.name = name;
+        this.restaurantName = name;
     }
+
     public String getAddress() {
         return address;
     }
+
     public void setAddress(String address) {
         this.address = address;
     }
+
     public String getPhoneNumber() {
         return phoneNumber;
     }
+
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+
     public String priceTitle(){
         if (this.getPrice().contains("$ (entree under $10)")){
             return "$";
@@ -177,6 +174,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         return cuisineStr.trim();
 
     }
+
     public String timeToString(){
         String[] timeSplit;
         String timeFinal = "";
@@ -201,7 +199,6 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         return this.getName() + " - " +  this.priceTitle() + "\n" + this.cuisineString() + "\n" + this.getAddress() + "\n" + this.getPhoneNumber() + "\n" + this.getDistance() + " km";
     }
 
-
     @Override
     public int compareTo(RestaurantInfo r) {
         return Double.valueOf(this.getDistance()).compareTo(Double.valueOf(r.getDistance()));
@@ -209,7 +206,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
 
     public void updateDistance(double lat, double lng){
         float [] resultArray  = new float [99];
-        Location.distanceBetween(lat, lng, this.getLat(), this.getLng(), resultArray);
+        Location.distanceBetween(lat, lng, this.getLatitude(), this.getLongitude(), resultArray);
         this.setDistance(new DecimalFormat("##.#").format(resultArray[0]/1000));
     }
 

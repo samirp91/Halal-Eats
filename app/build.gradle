@@ -25,6 +25,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.google.android.gms:play-services:8.4.0'
     compile 'com.facebook.android:facebook-android-sdk:4.6.0'
+    compile 'com.firebase:firebase-client-android:2.5.2+'
     compile 'com.parse.bolts:bolts-android:1.+'
     compile fileTree(dir: 'libs', include: 'Parse-*.jar')
     compile fileTree(dir: 'libs', include: 'ParseCrashReporting-*.jar')

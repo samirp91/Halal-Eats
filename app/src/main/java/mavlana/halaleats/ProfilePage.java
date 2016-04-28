@@ -37,6 +37,10 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -49,11 +53,7 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.plus.Plus;
-import com.parse.FindCallback;
-import com.parse.GetCallback;
-import com.parse.ParseException;
 import com.parse.ParseObject;
-import com.parse.ParseQuery;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -77,6 +77,7 @@ import java.util.TreeSet;
 
 public class ProfilePage extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
+    private Firebase ref = new Firebase("https://flickering-inferno-2585.firebaseio.com/");
     private ArrayList<RestaurantInfo> listOfRestaurants;
     private static final int LOCATION_PERMISSIONS = 21;
     private List<RestaurantInfo> foundNew;
@@ -179,6 +180,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             Profile profile = new Profile(this);
             name = profile.getName();
             userID = profile.getUserID();
+            System.out.println(userID);
             personPhotoUrl = profile.getPersonPhotoUrl();
 
         } else {
@@ -396,38 +398,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
         test.setText(name);
         favourites = new ArrayList<>();
-        ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
-        query.whereExists("rID");
-        query.findInBackground(new FindCallback<ParseObject>() {
-            public void done(List<ParseObject> objects, ParseException e) {
-                if (e == null) {
-                    count = 1;
-                    for (ParseObject post : objects) {
-                        String[] info = new String[12];
-                        getRestaurantInfo(info, post);
+        getFavouritesArray();
 
-                        RestaurantInfo r = new RestaurantInfo(info);
-                        r.setFavourite(true);
-                        r.updateDistance(lat, lng);
-                        favourites.add(r);
-
-                        if (objects.size() == count) {
-                            favouritesLoaded = true;
-                            Collections.sort(favourites);
-                            if (profileView) {
-                                favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
-                                        favourites);
-                                favouritesList.setAdapter(favouritesAdapter);
-                                favouritesAdapter.notifyDataSetChanged();
-                            }
-                        } else {
-                            count++;
-                        }
-                    }
-                }
-            }
-
-        });
 
     }
 
@@ -478,16 +450,16 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 cities.add(r.getCity());
             }
             for (String city : cities) {
-                items.add(new ListItem(city, "city"));
+                items.add(new ListItem(city, "City"));
             }
             items.add(cuisineHeader);
 
             for (String cuisine : cuisines) {
-                items.add(new ListItem(cuisine, "cuisine"));
+                items.add(new ListItem(cuisine, "Cuisine"));
             }
             items.add(priceHeader);
             for (String price : prices) {
-                items.add(new ListItem(price, "price"));
+                items.add(new ListItem(price, "Price"));
             }
             tt = new TwoTextArrayAdapter(ProfilePage.this, items);
             mDrawerList.setAdapter(tt);
@@ -496,6 +468,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             getInfoPage(lv);
 
         } else {
+            System.out.println("First Load");
             searchBar = (AutoCompleteTextView) findViewById(R.id.search);
             searchBar.addTextChangedListener(new SearchWatcher());
             searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -519,16 +492,13 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             setDrawerLayout();
 
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
-
             //Find list of restaurants
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("Restaurants");
-            query.setLimit(1000);
-            query.findInBackground(new FindCallback<ParseObject>() {
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void done(List<ParseObject> object, ParseException e) {
-                    for (ParseObject post : object) {
-                        String[] info = new String[12];
-                        getRestaurantInfo(info, post);
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    DataSnapshot restaurants = dataSnapshot.getChildren().iterator().next();
+                    for (DataSnapshot restaurantInfo : restaurants.getChildren()){
+                        String[] info = getRestaurantInfo(restaurantInfo);
                         RestaurantInfo r = new RestaurantInfo(info);
                         cities.add(r.getCity());
                         cuisineArray = r.getCuisine().split("\\+");
@@ -536,59 +506,47 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                             cuisines.add(a);
                         }
                         prices.add(r.getPrice());
-                        if (r.getLat() != 0) {
-                            Location.distanceBetween(lat, lng, r.getLat(), r.getLng(), resultArray);
+                        if (r.getLatitude() != 0) {
+                            Location.distanceBetween(lat, lng, r.getLatitude(), r.getLongitude(), resultArray);
 
                             r.setDistance(new DecimalFormat("##.#").format(resultArray[0] / 1000));
                         }
                         listOfRestaurants.add(r);
                         restaurantsName.add(r.getName());
                     }
+
                     Collections.sort(listOfRestaurants);
                     arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1, listOfRestaurants);
+                            android.R.layout.simple_list_item_1, listOfRestaurants);
                     ArrayList<String> temp = new ArrayList<>(restaurantsName);
                     nameAdapter = new ArrayAdapter<String>(ProfilePage.this,
-                                                                android.R.layout.simple_list_item_1,
-                                                                temp);
+                            android.R.layout.simple_list_item_1,
+                            temp);
 
                     lv.setAdapter(arrayAdapter);
                     searchBar.setAdapter(nameAdapter);
                     listLoaded = true;
                     listOfRestaurantsFiltered = listOfRestaurants;
                 }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
             });
 
-//            //Find Favourites of Current User
-//            ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
-//            List<String> rIDs = new ArrayList<>();
-//            query.whereExists("Restaurants");
-//            query.findInBackground(new FindCallback<ParseObject>() {
-//                public void done(List<ParseObject> objects, ParseException e) {
-//                    if (e == null) {
-//                        for (ParseObject post : objects) {
-//                            rIDs.add(post.getString("Restaurants"));
-//                        }
-//                    }
-//                    for (final String rID : rIDs) {
-//                        ParseQuery<ParseObject> query2 = ParseQuery.getQuery("Restaurants");
-//                        query2.whereEqualTo("rID", rID);
-//                        query2.getFirstInBackground(new GetCallback<ParseObject>() {
-//                            public void done(ParseObject object, ParseException e) {
-//                                if (object != null) {
-//                                    String[] info = new String[12];
-//                                    getRestaurantInfo(info, object);
-//
-//                                    RestaurantInfo r = new RestaurantInfo(info);
-//                                    r.setFavourite(true);
-//                                    r.updateDistance(lat, lng);
-//                                    favourites.add(r);
-//                                }
-//                            }
-//                        });
-//                    }
-//                }
-//            });
+            Collections.sort(listOfRestaurants);
+            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
+                    android.R.layout.simple_list_item_1, listOfRestaurants);
+            ArrayList<String> temp = new ArrayList<>(restaurantsName);
+            nameAdapter = new ArrayAdapter<String>(ProfilePage.this,
+                    android.R.layout.simple_list_item_1,
+                    temp);
+
+            lv.setAdapter(arrayAdapter);
+            searchBar.setAdapter(nameAdapter);
+            listLoaded = true;
+            listOfRestaurantsFiltered = listOfRestaurants;
 
         }
     }
@@ -681,15 +639,15 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     }
 
                     Collections.sort(foundNew);
-                    for (RestaurantInfo r : foundNew) {
-                        if (openQuery){
-                            if (isOpen(r))
-                                restaurantsName.add(r.getName());
-                        }
-                        else {
-                            restaurantsName.add(r.getName());
-                        }
-                    }
+//                    for (RestaurantInfo r : foundNew) {
+//                        if (openQuery){
+//                            if (isOpen(r))
+//                                restaurantsName.add(r.getName());
+//                        }
+//                        else {
+//                            restaurantsName.add(r.getName());
+//                        }
+//                    }
                     ArrayList<String> temp = new ArrayList<>(restaurantsName);
                     nameAdapter = new ArrayAdapter<>(ProfilePage.this,
                             android.R.layout.simple_list_item_1,
@@ -708,34 +666,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
             }
         });
-    }
-
-    private boolean isOpen(RestaurantInfo r) {
-
-        try {
-            Places.GeoDataApi.getPlaceById(mGoogleApiClient, r.getPlaceID())
-                    .setResultCallback(new ResultCallback<PlaceBuffer>() {
-                        @Override
-                        public void onResult(PlaceBuffer places) {
-                            if (places.getStatus().isSuccess() && places.getCount() > 0) {
-                                final Place myPlace = places.get(0);
-                                System.out.println(myPlace.getAttributions());
-                                System.out.println(myPlace.getLocale());
-                                Log.i(TAG, "Place found: " + myPlace.getName());
-                            } else {
-                                Log.e(TAG, "Place not found");
-                            }
-                            places.release();
-
-                        }
-                    });
-        }
-        catch (Exception e){
-            System.out.println("PlaceID " + r.getPlaceID());
-            e.printStackTrace();
-        }
-        return true;
-
     }
 
     public void onSearchButtonClicked(View view) {
@@ -809,7 +739,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
                                 lat = finalAddressArray.get(0).getLatitude();
                                 lng = finalAddressArray.get(0).getLongitude();
-
+                                System.out.println(listOfRestaurants.size());
                                 for (RestaurantInfo r : listOfRestaurants) {
                                     r.updateDistance(lat, lng);
 
@@ -834,7 +764,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                                 radio1.setChecked(true);
 
                             } catch (Exception e) {
-
                             }
 
                         }
@@ -937,39 +866,49 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             count = 1;
             activityStarted = false;
             favourites = new ArrayList<>();
-            ParseQuery<ParseObject> query = ParseQuery.getQuery(userID);
-            query.whereExists("rID");
-            query.findInBackground(new FindCallback<ParseObject>() {
-                public void done(List<ParseObject> objects, ParseException e) {
-                    if (e == null) {
-                        count = 1;
-                        for (ParseObject post : objects) {
-                            String[] info = new String[12];
-                            getRestaurantInfo(info, post);
+            getFavouritesArray();
 
-                            RestaurantInfo r = new RestaurantInfo(info);
-                            r.setFavourite(true);
-                            r.updateDistance(lat, lng);
-                            favourites.add(r);
+        }
+        super.onRestart();
+    }
 
-                            if (objects.size() == count) {
-                                favouritesLoaded = true;
-                                Collections.sort(favourites);
-                                if (profileView) {
-                                    favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
-                                            favourites);
-                                    favouritesList.setAdapter(favouritesAdapter);
-                                    favouritesAdapter.notifyDataSetChanged();
+    private void getFavouritesArray() {
+        ref.addListenerForSingleValueEvent(
+                new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.hasChild(userID)){
+                            DataSnapshot fav = dataSnapshot.child(userID);
+                            for (DataSnapshot favRestaurants : fav.getChildren()){
+                                String[] info = getRestaurantInfo(favRestaurants);
+
+                                RestaurantInfo r = new RestaurantInfo(info);
+                                r.setFavourite(true);
+                                r.updateDistance(lat, lng);
+                                favourites.add(r);
+
+                                if (fav.getChildrenCount() == count) {
+                                    favouritesLoaded = true;
+                                    Collections.sort(favourites);
+                                    if (profileView) {
+                                        favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
+                                                favourites);
+                                        favouritesList.setAdapter(favouritesAdapter);
+                                        favouritesAdapter.notifyDataSetChanged();
+                                    }
+                                } else {
+                                    count++;
                                 }
-                            } else {
-                                count++;
                             }
                         }
                     }
+
+                    @Override
+                    public void onCancelled(FirebaseError firebaseError) {
+
+                    }
                 }
-            });
-        }
-        super.onRestart();
+        );
     }
 
     public static ArrayList autocomplete(String input) {
@@ -1131,24 +1070,21 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         }
     }
 
-    public void getRestaurantInfo(String[] info, ParseObject post){
-        info[0] = post.getString("rID");
-        info[1] = post.getString("RestaurantName");
-        info[2] = post.getString("Address");
-        info[3] = post.getString("PhoneNumber");
-        info[4] = post.getString("Latitude");
-        info[5] = post.getString("Longitude");
-        info[6] = post.getString("Website");
-        info[7] = post.getString("Location");
-        info[8] = post.getString("Cuisine");
-        info[9] = post.getString("Price");
-        info[10] = post.getString("Time");
-        try {
-            info[11] = post.getString("PlaceID");
-        }
-        catch (Exception e){
-            info[11] = null;
-        }
+    public String[] getRestaurantInfo(DataSnapshot data){
+        String [] info = new String[11];
+        info[0] = data.child("rID").getValue().toString();
+        info[1] = data.child("RestaurantName").getValue().toString();
+        info[2] = data.child("Address").getValue().toString();
+        info[3] = data.child("PhoneNumber").getValue().toString();
+        info[4] = data.child("Latitude").getValue().toString();
+        info[5] = data.child("Longitude").getValue().toString();
+        info[6] = data.child("Website").getValue().toString();
+        info[7] = data.child("Location").getValue().toString();
+        info[8] = data.child("Cuisine").getValue().toString();
+        info[9] = data.child("Price").getValue().toString();
+        info[10] = data.child("Time").getValue().toString();
+
+        return info;
     }
 
     public void getInfoPage(ListView lv){
@@ -1161,8 +1097,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 intent.putExtra("Name", r.getName());
                 intent.putExtra("Address", r.getAddress());
                 intent.putExtra("Cuisine", r.cuisineString());
-                intent.putExtra("Latitude", String.valueOf(r.getLat()));
-                intent.putExtra("Longitude", String.valueOf(r.getLng()));
+                intent.putExtra("Latitude", String.valueOf(r.getLatitude()));
+                intent.putExtra("Longitude", String.valueOf(r.getLongitude()));
                 intent.putExtra("Number", r.getPhoneNumber());
                 intent.putExtra("Web", r.getWebsite());
                 intent.putExtra("Hours", r.timeToString());

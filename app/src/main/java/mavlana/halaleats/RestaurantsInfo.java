@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.firebase.client.Firebase;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -55,6 +56,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
+    private Firebase ref = new Firebase("https://flickering-inferno-2585.firebaseio.com/");
 
     /**
      * The fastest rate for active location updates. Exact. Updates will never be more frequent
@@ -91,7 +93,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         TextView nameText = (TextView) findViewById(R.id.restaurant_name);
         TextView addressText = (TextView) findViewById(R.id.restaurant_address);
         TextView cuisineText = (TextView) findViewById(R.id.restaurant_cuisine);
-        TextView timings = (TextView) findViewById(R.id.hours);
+        final TextView timings = (TextView) findViewById(R.id.hours);
         ImageButton directionsBtn = (ImageButton) findViewById(R.id.directionsBtn);
         ImageButton callBtn = (ImageButton) findViewById(R.id.callBtn);
         bookmarkBtn = (ImageButton) findViewById(R.id.bookmarkBtn);
@@ -124,42 +126,29 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         bookmarkBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Firebase userFavourite = ref.child(userID);
+
                 if (favourite) {
                     bookmarkBtn.setImageResource(R.drawable.ic_star_border_black_18dp);
+                    userFavourite.child(rID).removeValue();
                     favourite = false;
                 } else {
                     bookmarkBtn.setImageResource(R.drawable.ic_star_rate_black_18dp);
+                    userFavourite.child(rID).child("rID").setValue(rID);
+                    userFavourite.child(rID).child("Address").setValue(address);
+                    userFavourite.child(rID).child("Cuisine").setValue(cuisine);
+                    userFavourite.child(rID).child("Latitude").setValue(lat);
+                    userFavourite.child(rID).child("Longitude").setValue(lng);
+                    userFavourite.child(rID).child("Location").setValue(location);
+                    userFavourite.child(rID).child("PhoneNumber").setValue(number);
+                    userFavourite.child(rID).child("Price").setValue(price);
+                    userFavourite.child(rID).child("RestaurantName").setValue(name);
+                    userFavourite.child(rID).child("Time").setValue(hours);
+                    userFavourite.child(rID).child("Website").setValue(web);
                     favourite = true;
                 }
 
-                final ParseObject favourites = new ParseObject(userID);
-                ParseQuery query = new ParseQuery(userID);
-                query.whereEqualTo("rID", rID);
-                query.getFirstInBackground(new GetCallback<ParseObject>() {
-                    public void done(ParseObject object, ParseException e) {
-                        if (object == null) {
-                            favourites.put("rID", rID);
-                            favourites.put("Address", address);
-                            favourites.put("Cuisine", cuisine);
-                            favourites.put("Latitude", lat);
-                            favourites.put("Longitude", lng);
-                            favourites.put("Location", location);
-                            favourites.put("PhoneNumber", number);
-                            favourites.put("Price", price);
-                            favourites.put("RestaurantName", name);
-                            favourites.put("Time", hours);
-                            favourites.put("Website", web);
-                            favourites.saveInBackground();
-                        } else {
-                            try {
-                                object.delete();
-                                object.saveInBackground();
-                            } catch (ParseException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                    }
-                });
+                userFavourite.push();
 
             }
         });
