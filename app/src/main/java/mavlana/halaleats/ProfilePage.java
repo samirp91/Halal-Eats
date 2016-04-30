@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -44,16 +45,11 @@ import com.firebase.client.ValueEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.plus.Plus;
-import com.parse.ParseObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -92,8 +88,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private AutoCompleteTextView searchBar;
     private RadioGroup searchRadio;
     private ListView lv;
-    private ArrayAdapter<RestaurantInfo> arrayAdapter;
-    private ArrayAdapter<RestaurantInfo> favouritesAdapter;
+    private CustomListAdapter arrayAdapter;
+    private CustomListAdapter favouritesAdapter;
     private ArrayAdapter<String> nameAdapter;
     private double lat = 0;
     private double lng = 0;
@@ -341,8 +337,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
     @Override
     public void onBackPressed() {
-        if (searchBar != null && searchBar.hasFocus()) {
-            searchBar.clearFocus();
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+            mDrawerLayout.closeDrawers();
         } else {
             super.onBackPressed();
         }
@@ -416,6 +412,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 public void onFocusChange(View view, boolean b) {
                     if (!b) {
                         searchRadio.setVisibility(View.INVISIBLE);
+                        searchBar.clearFocus();
                     } else {
                         searchRadio.setVisibility(View.VISIBLE);
                     }
@@ -431,44 +428,19 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
 
             Collections.sort(listOfRestaurants);
-            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1,
-                    listOfRestaurants);
+            arrayAdapter = new CustomListAdapter(ProfilePage.this,
+                    R.layout.custom_list,
+                    listOfRestaurants, "gothic_0.TTF");
             ArrayList<String> temp = new ArrayList<>(restaurantsName);
             nameAdapter = new ArrayAdapter<String>(ProfilePage.this,
                     android.R.layout.simple_list_item_1,
                     temp);
-            //TODO: Make this into a function and use it in the getsearch view getting list of restaurants.
-            lv.setAdapter(arrayAdapter);
-            searchBar.setAdapter(nameAdapter);
-            listOfRestaurantsFiltered = listOfRestaurants;
-            items = new ArrayList<>();
-            items.add(new ListItem("Open Now", "Status"));
-            items.add(citiesHeader);
 
-            for (RestaurantInfo r : listOfRestaurants) {
-                cities.add(r.getCity());
-            }
-            for (String city : cities) {
-                items.add(new ListItem(city, "City"));
-            }
-            items.add(cuisineHeader);
-
-            for (String cuisine : cuisines) {
-                items.add(new ListItem(cuisine, "Cuisine"));
-            }
-            items.add(priceHeader);
-            for (String price : prices) {
-                items.add(new ListItem(price, "Price"));
-            }
-            tt = new TwoTextArrayAdapter(ProfilePage.this, items);
-            mDrawerList.setAdapter(tt);
-            mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+            getRestaurantAdapter();
 
             getInfoPage(lv);
 
         } else {
-            System.out.println("First Load");
             searchBar = (AutoCompleteTextView) findViewById(R.id.search);
             searchBar.addTextChangedListener(new SearchWatcher());
             searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -489,6 +461,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             listOfRestaurants = new ArrayList<>();
             restaurantsName = new TreeSet<>();
             favourites = new ArrayList<>();
+
             setDrawerLayout();
 
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -496,7 +469,13 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    DataSnapshot restaurants = dataSnapshot.getChildren().iterator().next();
+                    Iterator<DataSnapshot> restaurantsIterator = dataSnapshot.getChildren().iterator();
+                    DataSnapshot restaurants = null;
+                    while (restaurantsIterator.hasNext()){
+                        restaurants = restaurantsIterator.next();
+                        if (restaurants.getKey().equals("results"))
+                            break;
+                    }
                     for (DataSnapshot restaurantInfo : restaurants.getChildren()){
                         String[] info = getRestaurantInfo(restaurantInfo);
                         RestaurantInfo r = new RestaurantInfo(info);
@@ -516,15 +495,16 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     }
 
                     Collections.sort(listOfRestaurants);
-                    arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                            android.R.layout.simple_list_item_1, listOfRestaurants);
+                    arrayAdapter = new CustomListAdapter(ProfilePage.this,
+                            R.layout.custom_list, listOfRestaurants, "gothic_0.TTF");
                     ArrayList<String> temp = new ArrayList<>(restaurantsName);
                     nameAdapter = new ArrayAdapter<String>(ProfilePage.this,
                             android.R.layout.simple_list_item_1,
                             temp);
 
-                    lv.setAdapter(arrayAdapter);
-                    searchBar.setAdapter(nameAdapter);
+                    getRestaurantAdapter();
+                    getInfoPage(lv);
+
                     listLoaded = true;
                     listOfRestaurantsFiltered = listOfRestaurants;
                 }
@@ -535,20 +515,35 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 }
             });
 
-            Collections.sort(listOfRestaurants);
-            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1, listOfRestaurants);
-            ArrayList<String> temp = new ArrayList<>(restaurantsName);
-            nameAdapter = new ArrayAdapter<String>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1,
-                    temp);
-
-            lv.setAdapter(arrayAdapter);
-            searchBar.setAdapter(nameAdapter);
-            listLoaded = true;
-            listOfRestaurantsFiltered = listOfRestaurants;
-
         }
+    }
+
+    private void getRestaurantAdapter() {
+        lv.setAdapter(arrayAdapter);
+        searchBar.setAdapter(nameAdapter);
+        listOfRestaurantsFiltered = listOfRestaurants;
+        items = new ArrayList<>();
+        items.add(new ListItem("Open Now", "Status"));
+        items.add(citiesHeader);
+
+        for (RestaurantInfo r : listOfRestaurants) {
+            cities.add(r.getCity());
+        }
+        for (String city : cities) {
+            items.add(new ListItem(city, "City"));
+        }
+        items.add(cuisineHeader);
+
+        for (String cuisine : cuisines) {
+            items.add(new ListItem(cuisine, "Cuisine"));
+        }
+        items.add(priceHeader);
+        for (String price : prices) {
+            items.add(new ListItem(price, "Price"));
+        }
+        tt = new TwoTextArrayAdapter(ProfilePage.this, items);
+        mDrawerList.setAdapter(tt);
+        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
     }
 
     private void setDrawerLayout() {
@@ -573,6 +568,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     Iterator<Item> it = items.iterator();
                     Item a;
                     boolean openQuery = it.next().isClicked();
+                    System.out.println(openQuery);
                     it.next();
                     while (it.hasNext()) {
                         a = it.next();
@@ -638,24 +634,31 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                         foundNew = new ArrayList<RestaurantInfo>(foundOld);
                     }
 
+                    foundOld = new ArrayList<>(foundNew);
+                    foundNew = new ArrayList<>();
+
+                    if (openQuery) {
+                        for (Iterator<RestaurantInfo> r = foundOld.iterator(); r.hasNext(); ) {
+                            RestaurantInfo current = r.next();
+                            if (current.isOpen()) {
+                                foundNew.add(current);
+                            }
+                        }
+                    }
+
+                    if (foundNew.isEmpty() && count2 == 0) {
+                        foundNew = new ArrayList<RestaurantInfo>(foundOld);
+                    }
                     Collections.sort(foundNew);
-//                    for (RestaurantInfo r : foundNew) {
-//                        if (openQuery){
-//                            if (isOpen(r))
-//                                restaurantsName.add(r.getName());
-//                        }
-//                        else {
-//                            restaurantsName.add(r.getName());
-//                        }
-//                    }
+
                     ArrayList<String> temp = new ArrayList<>(restaurantsName);
                     nameAdapter = new ArrayAdapter<>(ProfilePage.this,
                             android.R.layout.simple_list_item_1,
                             temp);
                     searchBar.setAdapter(nameAdapter);
-                    arrayAdapter = new ArrayAdapter<>(ProfilePage.this,
-                            android.R.layout.simple_list_item_1,
-                            foundNew);
+                    arrayAdapter = new CustomListAdapter(ProfilePage.this,
+                            R.layout.custom_list,
+                            foundNew, "gothic_0.TTF");
                     lv.setAdapter(arrayAdapter);
                     arrayAdapter.notifyDataSetChanged();
                 }
@@ -793,9 +796,9 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             } else {
                 listOfRestaurantsFiltered = performSearch(listOfRestaurants, mSearchQuery);
             }
-            arrayAdapter = new ArrayAdapter<RestaurantInfo>(ProfilePage.this,
-                    android.R.layout.simple_list_item_1,
-                    listOfRestaurantsFiltered);
+            arrayAdapter = new CustomListAdapter(ProfilePage.this,
+                    R.layout.custom_list,
+                    listOfRestaurantsFiltered, "gothic_0.TTF");
             lv.setAdapter(arrayAdapter);
             arrayAdapter.notifyDataSetChanged();
         }
@@ -890,16 +893,16 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                                 if (fav.getChildrenCount() == count) {
                                     favouritesLoaded = true;
                                     Collections.sort(favourites);
-                                    if (profileView) {
-                                        favouritesAdapter = new ArrayAdapter<>(ProfilePage.this, android.R.layout.simple_list_item_1,
-                                                favourites);
-                                        favouritesList.setAdapter(favouritesAdapter);
-                                        favouritesAdapter.notifyDataSetChanged();
-                                    }
                                 } else {
                                     count++;
                                 }
                             }
+                        }
+                        if (profileView) {
+                            favouritesAdapter = new CustomListAdapter(ProfilePage.this, R.layout.custom_list,
+                                    favourites, "gothic_0.TTF");
+                            favouritesList.setAdapter(favouritesAdapter);
+                            favouritesAdapter.notifyDataSetChanged();
                         }
                     }
 

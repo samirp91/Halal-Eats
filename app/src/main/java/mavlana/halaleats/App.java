@@ -15,9 +15,9 @@ public class App extends Application {
         super.onCreate();
 
         Firebase.setAndroidContext(this);
-        Parse.enableLocalDatastore(this);
-        ParseCrashReporting.enable(this);
-        Parse.initialize(this, "6ZEjSMecAtcZpqjfYcCckpJ6Eey77blAifHaJxYN", "SMo3TDBVtsO5BugX1xkYJp6iiIgT4ixq8B5FJATD");
+        //Parse.enableLocalDatastore(this);
+        //ParseCrashReporting.enable(this);
+        //Parse.initialize(this, "6ZEjSMecAtcZpqjfYcCckpJ6Eey77blAifHaJxYN", "SMo3TDBVtsO5BugX1xkYJp6iiIgT4ixq8B5FJATD");
     }
 }
 

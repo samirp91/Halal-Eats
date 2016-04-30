@@ -51,17 +51,20 @@ public class CustomListAdapter extends ArrayAdapter {
         {
             RestaurantInfo r = (RestaurantInfo) items.get(position);
             final SpannableStringBuilder sb = new SpannableStringBuilder(r.toString());
-            final ForegroundColorSpan fcs = new ForegroundColorSpan(Color.CYAN);
-            final ForegroundColorSpan gcs = new ForegroundColorSpan(Color.GREEN);
+            final ForegroundColorSpan open = new ForegroundColorSpan(Color.GREEN);
+            final ForegroundColorSpan closed = new ForegroundColorSpan(Color.RED);
+            final ForegroundColorSpan noTiming = new ForegroundColorSpan(Color.YELLOW);
             final StyleSpan bss = new StyleSpan(android.graphics.Typeface.BOLD);
             final StyleSpan iss = new StyleSpan(Typeface.ITALIC);
-            sb.setSpan(fcs, 0, r.toString().length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             sb.setSpan(bss, 0, r.getName().length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-            sb.setSpan(iss, r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
-            sb.setSpan(new AbsoluteSizeSpan(33), r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
-            sb.setSpan(gcs, r.toString().length()-r.timeToString().length(),r.toString().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (r.toString().substring(r.toString().length() - 4).equals("OPEN")){
+                sb.setSpan(open, );
+            }
+//            sb.setSpan(iss, r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
+//            sb.setSpan(new AbsoluteSizeSpan(33), r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
+//            sb.setSpan(gcs, r.toString().length()-r.timeToString().length(),r.toString().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             text.setText(sb);
-            text.setBackgroundColor(Color.DKGRAY);
+//            text.setBackgroundColor(Color.parseColor("#FFEBCD"));
             //int color = Color.argb(200, 255, 64, 64);
             //text.setBackgroundColor( color );
 
