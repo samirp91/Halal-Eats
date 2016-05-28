@@ -19,7 +19,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.firebase.client.Firebase;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -31,10 +30,8 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.parse.GetCallback;
-import com.parse.ParseException;
-import com.parse.ParseObject;
-import com.parse.ParseQuery;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private String name;
@@ -56,7 +53,8 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
-    private Firebase ref = new Firebase("https://flickering-inferno-2585.firebaseio.com/");
+    private DatabaseReference ref = FirebaseDatabase.getInstance()
+            .getReferenceFromUrl("https://flickering-inferno-2585.firebaseio.com/");
 
     /**
      * The fastest rate for active location updates. Exact. Updates will never be more frequent
@@ -126,7 +124,7 @@ public class RestaurantsInfo extends FragmentActivity implements OnMapReadyCallb
         bookmarkBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Firebase userFavourite = ref.child(userID);
+                DatabaseReference userFavourite = ref.child(userID);
 
                 if (favourite) {
                     bookmarkBtn.setImageResource(R.drawable.ic_star_border_black_18dp);

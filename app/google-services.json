@@ -1,67 +1,42 @@
 {
   "project_info": {
-    "project_id": "halal-eats",
-    "project_number": "745274579869",
-    "name": "Halal Eats"
+    "project_number": "694718347026",
+    "firebase_url": "https://flickering-inferno-2585.firebaseio.com",
+    "project_id": "flickering-inferno-2585",
+    "storage_bucket": "flickering-inferno-2585.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:745274579869:android:94edb95f47f7f068",
-        "client_id": "android:mavlana.halaleats",
-        "client_type": 1,
+        "mobilesdk_app_id": "1:694718347026:android:94edb95f47f7f068",
         "android_client_info": {
           "package_name": "mavlana.halaleats"
         }
       },
       "oauth_client": [
         {
-          "client_id": "745274579869-og28ktgruvcmb3sp5gih584fvff0psl6.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "mavlana.halaleats",
-            "certificate_hash": "98F3D1A013380EF19E4B90AA77394D6AB664B1D7"
-          }
-        },
-        {
-          "client_id": "745274579869-ugepk8a8h5aik5onmcdhna9ebnhdgl5r.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "mavlana.halaleats",
-            "certificate_hash": "B033A7924447577015D772E5102E9F4C2E8FC004"
-          }
-        },
-        {
-          "client_id": "745274579869-cmmfovt8qhs65jsbgn9khrm1so8ssgkt.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "mavlana.halaleats",
-            "certificate_hash": "CBEB3AEF675DC19A18CC484A75272FC3E6881C54"
-          }
+          "client_id": "694718347026-s5o1lopk0er4idbkakc89had8qnlru8g.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
-      "api_key": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCr4zubGVR7hMCS-TpKeVMg-Lbb9oTLQcQ"
+        }
+      ],
       "services": {
         "analytics_service": {
           "status": 1
-        },
-        "cloud_messaging_service": {
-          "status": 1,
-          "apns_config": []
         },
         "appinvite_service": {
           "status": 1,
           "other_platform_oauth_client": []
         },
-        "google_signin_service": {
-          "status": 2
-        },
         "ads_service": {
-          "status": 1
+          "status": 2
         }
       }
     }
   ],
-  "client_info": [],
-  "ARTIFACT_VERSION": "1"
+  "configuration_version": "1"
 }
