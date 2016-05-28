@@ -38,10 +38,9 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.DatabaseError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -50,6 +49,8 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.plus.Plus;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -73,7 +74,8 @@ import java.util.TreeSet;
 
 public class ProfilePage extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
-    private Firebase ref = new Firebase("https://flickering-inferno-2585.firebaseio.com/");
+    private DatabaseReference ref = FirebaseDatabase.getInstance()
+            .getReferenceFromUrl("https://flickering-inferno-2585.firebaseio.com/");
     private ArrayList<RestaurantInfo> listOfRestaurants;
     private static final int LOCATION_PERMISSIONS = 21;
     private List<RestaurantInfo> foundNew;
@@ -510,9 +512,10 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {
+                public void onCancelled(DatabaseError databaseError) {
 
                 }
+
             });
 
         }
@@ -907,7 +910,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                     }
 
                     @Override
-                    public void onCancelled(FirebaseError firebaseError) {
+                    public void onCancelled(DatabaseError firebaseError) {
 
                     }
                 }

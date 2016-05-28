@@ -251,9 +251,19 @@ public class LoginActivity extends FragmentActivity implements
             // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
             Intent connected = new Intent(this, ProfilePage.class).putExtra("Login Type", "Google");
-            connected.putExtra("Name", acct.getDisplayName());
+            try {
+                connected.putExtra("Name", acct.getDisplayName());
+            }
+            catch (NullPointerException e){
+                connected.putExtra("Name", "Unknown User");
+            }
             connected.putExtra("ID", acct.getId());
-            connected.putExtra("Image", acct.getPhotoUrl().toString());
+            try {
+                connected.putExtra("Image", acct.getPhotoUrl().toString());
+            }
+            catch (NullPointerException e) {
+                connected.putExtra("Image", "https://docs.google.com/uc?authuser=0&id=0BwLvksCPOPZEQkRrMmVQYUx4am8&export=download");
+            }
             startActivity(connected);
             finish();
 //            updateUI(true);
