@@ -66,6 +66,9 @@
             android:name=".RestaurantsInfo"
             android:label="@string/title_activity_restaurants_info" >
         </activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="86964f383e286e6f4475cab8c964cfb5b1c007aa" />
     </application>
 
 </manifest>

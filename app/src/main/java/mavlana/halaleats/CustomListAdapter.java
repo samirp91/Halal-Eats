@@ -53,13 +53,22 @@ public class CustomListAdapter extends ArrayAdapter {
             final SpannableStringBuilder sb = new SpannableStringBuilder(r.toString());
             final ForegroundColorSpan open = new ForegroundColorSpan(Color.GREEN);
             final ForegroundColorSpan closed = new ForegroundColorSpan(Color.RED);
-            final ForegroundColorSpan noTiming = new ForegroundColorSpan(Color.YELLOW);
+            final ForegroundColorSpan noTiming = new ForegroundColorSpan(Color.BLUE);
             final StyleSpan bss = new StyleSpan(android.graphics.Typeface.BOLD);
             final StyleSpan iss = new StyleSpan(Typeface.ITALIC);
             sb.setSpan(bss, 0, r.getName().length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-            if (r.toString().substring(r.toString().length() - 4).equals("OPEN")){
-                sb.setSpan(open, );
+            if (r.toString().contains("OPEN")){
+                sb.setSpan(open, r.toString().length() - 4, r.toString().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
             }
+
+            else if (r.toString().contains("CLOSED")){
+                sb.setSpan(closed, r.toString().length() - 6, r.toString().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            }
+
+            else if (r.toString().contains("TIMINGS NOT AVAILABLE")){
+                sb.setSpan(noTiming, r.toString().length() - 21, r.toString().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            }
+
 //            sb.setSpan(iss, r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
 //            sb.setSpan(new AbsoluteSizeSpan(33), r.getName().length() + r.priceTitle().length() + 3, r.getName().length() + r.priceTitle().length() + 5 + r.getCuisine().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE );
 //            sb.setSpan(gcs, r.toString().length()-r.timeToString().length(),r.toString().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);

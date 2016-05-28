@@ -5,14 +5,17 @@ package mavlana.halaleats;
  */
 import android.app.Application;
 
+import com.crashlytics.android.Crashlytics;
 import com.firebase.client.Firebase;
 import com.parse.Parse;
 import com.parse.ParseCrashReporting;
+import io.fabric.sdk.android.Fabric;
 
 public class App extends Application {
 
     @Override public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
 
         Firebase.setAndroidContext(this);
         //Parse.enableLocalDatastore(this);

@@ -52,10 +52,10 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             this.setPrice(info[9].trim());
             this.setTime(info[10]);
             this.favourite = false;
-            if (isOpen())
-                this.setStatus("OPEN");
-            else if (this.getTime().equals("Timings Not Available"))
+            if (this.getTime().equals("Timings Not Available"))
                 this.setStatus("TIMINGS NOT AVAILABLE");
+            else if (isOpen())
+                this.setStatus("OPEN");
             else
                 this.setStatus("CLOSED");
         }
@@ -211,7 +211,8 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     }
 
     public String toString(){
-        return this.getName() + " - " +  this.priceTitle() + "\n" + this.cuisineString() + "\n" + this.getAddress() + "\n" + this.getPhoneNumber() + "\n" + this.getDistance() + " km\n" + this.getStatus().toUpperCase();
+//        System.out.println(this.getName());
+        return this.getName() + " - " +  this.priceTitle() + "\n" + this.cuisineString() + "\n" + this.getAddress() + "\n" + this.getPhoneNumber() + "\n" + this.getDistance() + " km\n" + this.getStatus();
     }
 
     @Override
@@ -237,23 +238,30 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         if (this.getTime().equals("Timings Not Available"))
             return true;
 
-        String[] preprocess = this.getTime().split("\\\\");
+        String[] preprocess = this.timeToString().split("\n");
         String todaysTime = getTodaysTime(preprocess);
-
         if (todaysTime.trim().equals("Closed"))
             return false;
 
-        double[] timeRange = getTimeRange(todaysTime);
         double timeNow = getTimeNow();
 
-        return (timeRange[0] <= timeNow && timeNow <= timeRange[1]);
+        String[] times = todaysTime.split("&");
+        for (String time : times) {
+            double[] timeRange = getTimeRange(time.trim());
+//            System.out.println(timeRange[0]);
+//            System.out.println(timeRange[1]);
+//            System.out.println(timeNow);
+            if (timeRange[0] <= timeNow && timeNow <= timeRange[1])
+                return true;
+        }
 
+        return false;
     }
 
     public double[] getTimeRange(String todaysTime) {
-        String[] timeSplit = todaysTime.split("-");
-        String start = timeSplit[0];
-        String end = timeSplit[1];
+        String[] timeSplit = todaysTime.split(" - ");
+        String start = timeSplit[0].trim();
+        String end = timeSplit[1].trim();
 
         double startHour = 0;
         double startMinute = 0;
@@ -279,17 +287,21 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             endHour = Double.valueOf(endRange[0]);
         }
 
-        if (start.substring(start.length() - 2).equals("pm"))
+        if (start.substring(start.length() - 2).equals("pm") && !start.substring(0, 2).equals("12"))
             startHour += 12;
 
-        if (start.substring(start.length() - 2).equals("am") && start.substring(0, 3).equals(" 12")) //Make 12am to 0
+        else if (start.substring(start.length() - 2).equals("am") && start.substring(0, 2).equals("12")) //Make 12am to 0
             startHour = 0;
 
         if (end.substring(end.length() - 2).equals("pm"))
             endHour += 12;
 
-        if (end.substring(end.length() - 2).equals("am") && end.substring(0, 3).equals(" 12")) //Make 12am to 24
+        else if (end.substring(end.length() - 2).equals("am") && end.substring(0, 2).equals("12")) //Make 12am to 24
             endHour = 24;
+
+        else if (end.substring(end.length() - 2).equals("am")){
+            endHour = 24 + Integer.valueOf(end.substring(0, 1));
+        }
 
         double startTime = startHour + startMinute;
         double endTime = endHour + endMinute;
@@ -304,6 +316,22 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         double hourNow = Double.valueOf(c.get(Calendar.HOUR_OF_DAY));
         double minute = Double.valueOf(c.get(Calendar.MINUTE))/100;
 
+        if (hourNow == 0){
+            hourNow = 24;
+        }
+
+        else if (hourNow == 1){
+            hourNow = 25;
+        }
+
+        else if (hourNow == 2){
+            hourNow = 26;
+        }
+
+        else if (hourNow == 3){
+            hourNow = 27;
+        }
+
         return hourNow + minute;
     }
 
@@ -313,10 +341,10 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             if (times.equals(""))
                 continue;
             String[] timeArray = times.split(":", 2);
-            time = timeArray[1];
-            String day = timeArray[0];
+            time = timeArray[1].trim();
+            String day = timeArray[0].trim();
             if (isDay(day)){
-                break;
+                return time;
             }
         }
         return time;
@@ -331,8 +359,8 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
 
             if (days.contains("-")){
                 String[] dayRange = days.split("-");
-                int startDay = getDay(dayRange[0]);
-                int endDay = getDay(dayRange[1]);
+                int startDay = getDay(dayRange[0].trim());
+                int endDay = getDay(dayRange[1].trim());
                 if (startDay <= today && today <= endDay){
                     isToday = true;
                     break;
@@ -340,7 +368,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
 
             }
             else{
-                int dayInt = getDay(days);
+                int dayInt = getDay(days.trim());
                 if (today == dayInt){
                     isToday = true;
                     break;
@@ -358,7 +386,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
         if (day.equals("Mon"))
             return 2;
 
-        if (day.equals("Tues"))
+        if (day.equals("Tue"))
             return 3;
 
         if (day.equals("Wed"))

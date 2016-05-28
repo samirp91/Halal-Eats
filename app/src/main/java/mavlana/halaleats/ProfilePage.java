@@ -337,7 +337,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
     @Override
     public void onBackPressed() {
-        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
             mDrawerLayout.closeDrawers();
         } else {
             super.onBackPressed();
