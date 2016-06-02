@@ -381,6 +381,7 @@ public class LoginActivity extends FragmentActivity implements
     public boolean isLoggedIn() {
         if(AccessToken.getCurrentAccessToken()!=null)
             loggedIn=true;
+        System.out.println(loggedIn);
         return loggedIn;
 
     }

@@ -168,7 +168,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
             return "$$$";
         }
         else{
-            System.out.println(getName());
+            //System.out.println(getName());
             return "Price range not found";
         }
     }
@@ -235,6 +235,7 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
     }
 
     public boolean isOpen(){
+//        System.out.println(this.getName());
         if (this.getTime().equals("Timings Not Available"))
             return true;
 
@@ -247,10 +248,14 @@ public class RestaurantInfo implements Comparable<RestaurantInfo> {
 
         String[] times = todaysTime.split("&");
         for (String time : times) {
+//            System.out.println(time);
             double[] timeRange = getTimeRange(time.trim());
 //            System.out.println(timeRange[0]);
 //            System.out.println(timeRange[1]);
 //            System.out.println(timeNow);
+            if (timeRange[0] == 0.0 && timeRange[1] == 23.59) { //24 hours
+                return true;
+            }
             if (timeRange[0] <= timeNow && timeNow <= timeRange[1])
                 return true;
         }
