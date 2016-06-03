@@ -165,13 +165,13 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         System.out.println("Profile Page");
         setContentView(R.layout.activity_profile_page);
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        try {
-            loginType = currentUser.getProviderId();
-        }
-        catch (NullPointerException e){
-            loginType = "Unknown";
-        }
-        System.out.println(loginType);
+//        try {
+//            loginType = currentUser.getProviderId();
+//        }
+//        catch (NullPointerException e){
+//            loginType = "Unknown";
+//        }
+//        System.out.println(loginType);
         test = (TextView) findViewById(R.id.test);
         imgProfilePic = (ImageView) findViewById(R.id.imgProfilePic);
         try {
@@ -181,46 +181,46 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             personPhotoUrl = DEFAULT_PROFILE_PICTURE;
         }
 
-        switch (loginType) {
-            case "Google":
+//        switch (loginType) {
+//            case "Google":
+//                mGoogleApiClient = new GoogleApiClient.Builder(this)
+//                        .addConnectionCallbacks(this)
+//                        .addOnConnectionFailedListener(this)
+//                        .addApi(Plus.API)
+//                        .addApi(LocationServices.API)
+//                        .addScope(new Scope(Scopes.PROFILE))
+//                        .build();
+//
+//                name = currentUser.getDisplayName();
+//                userID = "G" + currentUser.getUid();
+//                System.out.println(userID);
+//
+//                break;
+//            case "Facebook":
+//                mGoogleApiClient = new GoogleApiClient.Builder(this)
+//                        .addConnectionCallbacks(this)
+//                        .addOnConnectionFailedListener(this)
+//                        .addApi(LocationServices.API)
+//                        .build();
+//
+//                userID = "FB" + currentUser.getUid();
+//                name = currentUser.getDisplayName();
+//                test.setText(name);
+//                break;
+//
+//            default:
                 mGoogleApiClient = new GoogleApiClient.Builder(this)
                         .addConnectionCallbacks(this)
                         .addOnConnectionFailedListener(this)
-                        .addApi(Plus.API)
-                        .addApi(LocationServices.API)
-                        .addScope(new Scope(Scopes.PROFILE))
-                        .build();
-
-                name = currentUser.getDisplayName();
-                userID = "G" + currentUser.getUid();
-                System.out.println(userID);
-
-                break;
-            case "Facebook":
-                mGoogleApiClient = new GoogleApiClient.Builder(this)
-                        .addConnectionCallbacks(this)
-                        .addOnConnectionFailedListener(this)
                         .addApi(LocationServices.API)
                         .build();
 
-                userID = "FB" + currentUser.getUid();
+                userID = currentUser.getUid();
                 name = currentUser.getDisplayName();
                 test.setText(name);
-                break;
-
-            default:
-                mGoogleApiClient = new GoogleApiClient.Builder(this)
-                        .addConnectionCallbacks(this)
-                        .addOnConnectionFailedListener(this)
-                        .addApi(LocationServices.API)
-                        .build();
-
-                userID = "E" + currentUser.getUid();
-                name = currentUser.getDisplayName();
-                test.setText(name);
-                break;
-        }
-
+//                break;
+//        }
+//
         createLocationRequest();
         mGoogleApiClient.connect();
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -271,9 +271,9 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     @Override
     protected void onStart() {
         super.onStart();
-        if (loginType.equals("Google")) {
-            mGoogleApiClient.connect();
-        }
+//        if (loginType.equals("Google")) {
+//            mGoogleApiClient.connect();
+//        }
     }
 
     @Override
@@ -492,7 +492,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
             //Find list of restaurants
-            ref.addValueEventListener(new ValueEventListener() {
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     Iterator<DataSnapshot> restaurantsIterator = dataSnapshot.getChildren().iterator();
@@ -903,7 +903,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     }
 
     private void getFavouritesArray() {
-        ref.addValueEventListener(
+        ref.addListenerForSingleValueEvent(
                 new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
