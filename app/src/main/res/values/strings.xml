@@ -10,12 +10,12 @@
     <string name="play_services_error_fmt">Google Play Services Error: %i</string>
 
     <!-- Button labels -->
-    <string name="sign_out">Sign Out</string>
+    <string name="sign_in">Sign In</string>
     <string name="disconnect">Disconnect</string>
 
     <!-- Content Description for images -->
     <string name="desc_google_icon">Google Logo</string>
-    <string name="facebook_app_id">911910475541831</string>
+    <string name="facebook_application_id">911910475541831</string>
     <string name="com_facebook_loginview_log_in_button_long">Log in with facebook </string>
     <string name="title_activity_profile_page">ProfilePage</string>
 

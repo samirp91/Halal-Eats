@@ -38,6 +38,8 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.DatabaseError;
@@ -116,7 +118,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     private boolean profileView = false;
     private TwoTextArrayAdapter tt;
     private boolean activityStarted = false;
-    private String fbID;
     private TreeSet<String> cities = new TreeSet<>();
     private TreeSet<String> cuisines = new TreeSet<>();
     private TreeSet<String> prices = new TreeSet<>();
@@ -137,6 +138,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
      */
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    public static final String DEFAULT_PROFILE_PICTURE = "https://docs.google.com/uc?authuser=0&id=0BwLvksCPOPZEQkRrMmVQYUx4am8&export=download";
 
     // Keys for storing activity state in the Bundle.
     protected final static String LOCATION_KEY = "location-key";
@@ -160,38 +162,63 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        System.out.println("Profile Page");
         setContentView(R.layout.activity_profile_page);
-
-        loginType = getIntent().getStringExtra("Login Type");
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        try {
+            loginType = currentUser.getProviderId();
+        }
+        catch (NullPointerException e){
+            loginType = "Unknown";
+        }
+        System.out.println(loginType);
         test = (TextView) findViewById(R.id.test);
         imgProfilePic = (ImageView) findViewById(R.id.imgProfilePic);
+        try {
+            personPhotoUrl = currentUser.getPhotoUrl().toString();
+        }
+        catch (NullPointerException e) {
+            personPhotoUrl = DEFAULT_PROFILE_PICTURE;
+        }
 
-        if (loginType.equals("Google")) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(Plus.API)
-                    .addApi(LocationServices.API)
-                    .addScope(new Scope(Scopes.PROFILE))
-                    .build();
+        switch (loginType) {
+            case "Google":
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(Plus.API)
+                        .addApi(LocationServices.API)
+                        .addScope(new Scope(Scopes.PROFILE))
+                        .build();
 
-            Profile profile = new Profile(this);
-            name = profile.getName();
-            userID = profile.getUserID();
-            System.out.println(userID);
-            personPhotoUrl = profile.getPersonPhotoUrl();
+                name = currentUser.getDisplayName();
+                userID = "G" + currentUser.getUid();
+                System.out.println(userID);
 
-        } else {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
+                break;
+            case "Facebook":
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
 
-            fbID = getIntent().getStringExtra("ID");
-            userID = "FB" + fbID;
-            name = getIntent().getStringExtra("Name");
-            test.setText(name);
+                userID = "FB" + currentUser.getUid();
+                name = currentUser.getDisplayName();
+                test.setText(name);
+                break;
+
+            default:
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
+
+                userID = "E" + currentUser.getUid();
+                name = currentUser.getDisplayName();
+                test.setText(name);
+                break;
         }
 
         createLocationRequest();
@@ -292,6 +319,10 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
             startLocationUpdates();
         } else if (id == R.id.stop_location) {
             stopLocationUpdates();
+        } else if (id == R.id.sign_out){
+            FirebaseAuth.getInstance().signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
@@ -384,14 +415,8 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
         test = (TextView) findViewById(R.id.test);
         favouritesList = (ListView) findViewById(R.id.favourites);
         imgProfilePic = (ImageView) findViewById(R.id.imgProfilePic);
-        if (loginType.equals("Google")) {
-            new LoadProfileImage(imgProfilePic).execute(personPhotoUrl);
-        } else {
-            String imageURL;
-            Log.d(TAG, "Loading Picture");
-            imageURL = "https://graph.facebook.com/" + fbID + "/picture?type=large";
-            new LoadProfileImage(imgProfilePic).execute(imageURL);
-        }
+        new LoadProfileImage(imgProfilePic).execute(personPhotoUrl);
+
         getInfoPage(favouritesList);
 
         test.setText(name);
@@ -404,7 +429,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     public void getSearchView() {
         setContentView(R.layout.activity_search);
         profileView = false;
-
+        System.out.println(listLoaded);
         if (listLoaded) {
             lv = (ListView) findViewById(R.id.list_view);
             searchBar = (AutoCompleteTextView) findViewById(R.id.search);
@@ -421,7 +446,6 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
                 }
             });
             mDrawerLayout = (DrawerLayout) findViewById(R.id.profile_page);
-            //filter = (ImageButton) findViewById(R.id.filter);
             searchRadio = (RadioGroup) findViewById(R.id.searchRadio);
             searchRadio.setVisibility(View.INVISIBLE);
             lv = (ListView) findViewById(R.id.list_view);
@@ -468,7 +492,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
 
             mDrawerList = (ListView) findViewById(R.id.left_drawer);
             //Find list of restaurants
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            ref.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     Iterator<DataSnapshot> restaurantsIterator = dataSnapshot.getChildren().iterator();
@@ -879,7 +903,7 @@ public class ProfilePage extends AppCompatActivity implements GoogleApiClient.Co
     }
 
     private void getFavouritesArray() {
-        ref.addListenerForSingleValueEvent(
+        ref.addValueEventListener(
                 new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
